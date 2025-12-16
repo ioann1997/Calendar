@@ -5,11 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Трекер ритуалов и задач</title>
     <link rel="stylesheet" href="styles.css">
-<<<<<<< HEAD
     <!-- FullCalendar -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/main.min.css">
-=======
->>>>>>> 4ac112bd6ccc715026a59727989a0da75ac6e88a
     <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
@@ -25,55 +22,68 @@
             </div>
         </header>
 
-<<<<<<< HEAD
-        <!-- Визуализация календаря (FullCalendar) -->
-        <section class="calendar-wrapper">
-            <div id="fullcalendar"></div>
-        </section>
+        <div class="main-layout">
+            <aside class="sidebar">
+                <div class="tabs tabs-vertical">
+                    <button class="tab-btn active" data-tab="daily">Ежедневные ритуалы</button>
+                    <button class="tab-btn" data-tab="master">Задачи от Господина</button>
+                    <button class="tab-btn" data-tab="weekly">Еженедельные ритуалы</button>
+                    <button class="tab-btn" data-tab="rules">Правила</button>
+                    <button class="tab-btn" data-tab="bans">Запреты</button>
+                </div>
+            </aside>
 
-        <div class="tabs">
-            <button class="tab-btn active" data-tab="daily">Ежедневные ритуалы</button>
-            <button class="tab-btn" data-tab="master">Задачи от Господина</button>
-=======
-        <div class="tabs">
-            <button class="tab-btn active" data-tab="daily">Ежедневные ритуалы</button>
-            <button class="tab-btn" data-tab="master">Задачи от хозяина</button>
->>>>>>> 4ac112bd6ccc715026a59727989a0da75ac6e88a
-            <button class="tab-btn" data-tab="weekly">Еженедельные ритуалы</button>
-        </div>
+            <div class="content-area">
+                <!-- Календарь FullCalendar -->
+                <section class="calendar-wrapper">
+                    <div id="fullcalendar"></div>
+                </section>
 
-        <!-- Ежедневные ритуалы -->
-        <div class="tab-content active" id="daily">
-            <div class="section-header">
-                <h2>🌅 Ежедневные ритуалы</h2>
-                <button class="add-btn" onclick="addItem('daily')">+ Добавить</button>
+                <!-- Ежедневные ритуалы -->
+                <div class="tab-content active" id="daily">
+                    <div class="section-header">
+                        <h2>🌅 Ежедневные ритуалы</h2>
+                        <button class="add-btn" onclick="addItem('daily')">+ Добавить</button>
+                    </div>
+                    <div class="items-list" id="daily-list"></div>
+                </div>
+
+                <!-- Задачи от Господина -->
+                <div class="tab-content" id="master">
+                    <div class="section-header">
+                        <h2>👑 Задачи от Господина</h2>
+                        <button class="add-btn" onclick="addItem('master')">+ Добавить</button>
+                    </div>
+                    <div class="items-list" id="master-list"></div>
+                </div>
+
+                <!-- Еженедельные ритуалы -->
+                <div class="tab-content" id="weekly">
+                    <div class="section-header">
+                        <h2>📆 Еженедельные ритуалы</h2>
+                        <button class="add-btn" onclick="addItem('weekly')">+ Добавить</button>
+                    </div>
+                    <div class="items-list" id="weekly-list"></div>
+                </div>
+
+                <!-- Правила -->
+                <div class="tab-content" id="rules">
+                    <div class="section-header">
+                        <h2>📜 Правила</h2>
+                        <button class="add-btn" onclick="addItem('rules')">+ Добавить</button>
+                    </div>
+                    <div class="items-list" id="rules-list"></div>
+                </div>
+
+                <!-- Запреты -->
+                <div class="tab-content" id="bans">
+                    <div class="section-header">
+                        <h2>🚫 Запреты</h2>
+                        <button class="add-btn" onclick="addItem('bans')">+ Добавить</button>
+                    </div>
+                    <div class="items-list" id="bans-list"></div>
+                </div>
             </div>
-            <div class="items-list" id="daily-list"></div>
-        </div>
-
-<<<<<<< HEAD
-        <!-- Задачи от Господина -->
-        <div class="tab-content" id="master">
-            <div class="section-header">
-                <h2>👑 Задачи от Господина</h2>
-=======
-        <!-- Задачи от хозяина -->
-        <div class="tab-content" id="master">
-            <div class="section-header">
-                <h2>👑 Задачи от хозяина</h2>
->>>>>>> 4ac112bd6ccc715026a59727989a0da75ac6e88a
-                <button class="add-btn" onclick="addItem('master')">+ Добавить</button>
-            </div>
-            <div class="items-list" id="master-list"></div>
-        </div>
-
-        <!-- Еженедельные ритуалы -->
-        <div class="tab-content" id="weekly">
-            <div class="section-header">
-                <h2>📆 Еженедельные ритуалы</h2>
-                <button class="add-btn" onclick="addItem('weekly')">+ Добавить</button>
-            </div>
-            <div class="items-list" id="weekly-list"></div>
         </div>
 
         <!-- Модальное окно для добавления/редактирования -->
@@ -116,10 +126,8 @@
     </div>
 
     <script src="firebase-config.js"></script>
-<<<<<<< HEAD
-    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/main.min.js"></script>
-=======
->>>>>>> 4ac112bd6ccc715026a59727989a0da75ac6e88a
+    <!-- Важно: для JS используем index.global.min.js, а не main.min.js -->
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js"></script>
     <script src="script.js"></script>
 </body>
 </html>
