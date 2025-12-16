@@ -68,6 +68,16 @@ function getLocalDateString(date = new Date()) {
     return `${year}-${month}-${day}`;
 }
 
+// Переключение мобильного меню
+function toggleMobileMenu() {
+    const sidebar = document.getElementById('sidebar');
+    const overlay = document.getElementById('mobile-menu-overlay');
+    if (sidebar && overlay) {
+        sidebar.classList.toggle('mobile-open');
+        overlay.classList.toggle('active');
+    }
+}
+
 // Показ информации о календаре
 function showCalendarInfo() {
     const infoDiv = document.getElementById('calendar-info');
@@ -245,6 +255,14 @@ function setupTabs() {
             document.getElementById(tabId).classList.add('active');
             
             currentTab = tabId;
+            
+            // Закрываем мобильное меню при выборе вкладки
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('mobile-menu-overlay');
+            if (sidebar && overlay && window.innerWidth <= 768) {
+                sidebar.classList.remove('mobile-open');
+                overlay.classList.remove('active');
+            }
         });
     });
 }

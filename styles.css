@@ -49,6 +49,14 @@ header {
     overflow: hidden;
 }
 
+.mobile-menu-btn {
+    display: none;
+}
+
+.mobile-menu-overlay {
+    display: none;
+}
+
 header h1 {
     position: relative;
     font-size: 2.4em;
@@ -656,11 +664,7 @@ header h1 {
     pointer-events: auto;
 }
 
-@media (max-width: 900px) {
-    .calendar-wrapper {
-        padding-inline: 18px;
-    }
-=======
+.empty-state {
     padding: 60px 20px;
     color: #999;
 }
@@ -668,7 +672,6 @@ header h1 {
 .empty-state-icon {
     font-size: 4em;
     margin-bottom: 20px;
->>>>>>> 4ac112bd6ccc715026a59727989a0da75ac6e88a
 }
 
 /* Модальное окно */
@@ -866,37 +869,298 @@ header h1 {
 }
 
 /* Адаптивность */
+/* ============================
+   МОБИЛЬНАЯ АДАПТАЦИЯ
+   ============================ */
+
 @media (max-width: 768px) {
-    header h1 {
-        font-size: 2em;
+    body {
+        padding: 10px;
     }
 
-    .tabs {
-        flex-direction: column;
+    .container {
+        max-width: 100%;
+        border-radius: 16px;
     }
-    
+
+    header {
+        padding: 20px 16px 16px;
+        position: relative;
+    }
+
+    .mobile-menu-btn {
+        display: flex !important;
+        position: absolute;
+        top: 20px;
+        left: 16px;
+        background: var(--accent-1);
+        color: white;
+        border: none;
+        border-radius: 8px;
+        width: 44px;
+        height: 44px;
+        font-size: 24px;
+        cursor: pointer;
+        align-items: center;
+        justify-content: center;
+        z-index: 100;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    }
+
+    .mobile-menu-btn:active {
+        transform: scale(0.95);
+    }
+
+    header h1 {
+        font-size: 1.5em;
+        margin-left: 50px;
+        margin-bottom: 8px;
+    }
+
+    .subtitle {
+        font-size: 0.9em;
+        margin-left: 50px;
+        margin-bottom: 12px;
+    }
+
+    .calendar-info {
+        flex-direction: column;
+        gap: 12px;
+        margin-top: 12px;
+        padding-top: 12px;
+    }
+
+    .calendar-id {
+        font-size: 0.85em;
+        word-break: break-all;
+    }
+
+    .share-btn {
+        width: 100%;
+        padding: 12px;
+        font-size: 0.95em;
+    }
+
+    .main-layout {
+        flex-direction: column;
+        padding: 12px;
+        gap: 12px;
+    }
+
+    .mobile-menu-overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 998;
+    }
+
+    .mobile-menu-overlay.active {
+        display: block;
+    }
+
+    .sidebar {
+        position: fixed;
+        top: 0;
+        left: -280px;
+        width: 260px;
+        height: 100vh;
+        background: var(--bg-secondary);
+        z-index: 999;
+        transition: left 0.3s ease;
+        box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+        padding: 20px 16px;
+        overflow-y: auto;
+    }
+
+    .sidebar.mobile-open {
+        left: 0;
+    }
+
+    .tabs-vertical {
+        flex-direction: column;
+        gap: 8px;
+    }
+
     .tab-btn {
-        border-bottom: 1px solid #e0e0e0;
-        border-right: none;
+        width: 100%;
+        padding: 16px;
+        font-size: 1em;
+        border-radius: 12px;
+        border: 1px solid var(--border);
+        background: white;
+        text-align: left;
+        min-height: 52px;
+        touch-action: manipulation;
     }
 
     .tab-btn.active {
-        border-bottom-color: #667eea;
+        background: var(--accent-1);
+        color: white;
+        border-color: var(--accent-1);
+    }
+
+    .content-area {
+        width: 100%;
+    }
+
+    .calendar-wrapper {
+        padding: 12px;
+        margin-bottom: 16px;
+    }
+
+    .fc .fc-toolbar {
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+
+    .fc .fc-toolbar-title {
+        font-size: 0.95em;
+    }
+
+    .fc .fc-button {
+        padding: 8px 12px;
+        font-size: 0.85em;
+        min-height: 40px;
+    }
+
+    .fc .fc-col-header-cell-cushion {
+        font-size: 0.75em;
+        padding: 4px 2px;
+    }
+
+    .fc .fc-daygrid-day-number {
+        font-size: 0.8em;
+        padding: 4px;
+    }
+
+    .fc .fc-daygrid-event {
+        font-size: 0.75em;
+        padding: 3px 6px;
+        margin-bottom: 3px;
     }
 
     .section-header {
         flex-direction: column;
         align-items: flex-start;
-        gap: 15px;
+        gap: 12px;
+        margin-bottom: 16px;
+    }
+
+    .section-header h2 {
+        font-size: 1.3em;
+    }
+
+    .add-btn {
+        width: 100%;
+        padding: 14px;
+        font-size: 1em;
+        min-height: 48px;
+        touch-action: manipulation;
+    }
+
+    .items-list {
+        gap: 12px;
     }
 
     .item {
+        padding: 16px;
         flex-direction: column;
         align-items: flex-start;
+        gap: 12px;
+    }
+
+    .item-name {
+        font-size: 1.05em;
+    }
+
+    .item-description {
+        font-size: 0.9em;
     }
 
     .item-actions {
-        align-self: flex-end;
+        width: 100%;
+        display: flex;
+        justify-content: flex-end;
+        gap: 8px;
+        margin-top: 8px;
+    }
+
+    .btn-icon {
+        width: 44px;
+        height: 44px;
+        min-width: 44px;
+        touch-action: manipulation;
+    }
+
+    .modal-content {
+        width: 90%;
+        max-width: 90%;
+        margin: 10% auto;
+        padding: 20px;
+        max-height: 85vh;
+        overflow-y: auto;
+    }
+
+    .modal-header h2 {
+        font-size: 1.3em;
+    }
+
+    .form-group {
+        margin-bottom: 16px;
+    }
+
+    .form-group label {
+        font-size: 0.95em;
+        margin-bottom: 8px;
+    }
+
+    .form-group input,
+    .form-group textarea,
+    .form-group select {
+        padding: 12px;
+        font-size: 1em;
+        min-height: 44px;
+    }
+
+    .form-actions {
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .form-actions button {
+        width: 100%;
+        padding: 14px;
+        font-size: 1em;
+        min-height: 48px;
+        touch-action: manipulation;
+    }
+}
+
+@media (max-width: 480px) {
+    header h1 {
+        font-size: 1.3em;
+    }
+
+    .fc .fc-toolbar-title {
+        font-size: 0.85em;
+    }
+
+    .fc .fc-button {
+        padding: 6px 10px;
+        font-size: 0.8em;
+    }
+
+    .fc .fc-col-header-cell-cushion {
+        font-size: 0.7em;
+    }
+
+    .fc .fc-daygrid-event {
+        font-size: 0.7em;
+        padding: 2px 4px;
     }
 }
 

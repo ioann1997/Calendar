@@ -14,6 +14,7 @@
 <body>
     <div class="container">
         <header>
+            <button class="mobile-menu-btn" id="mobile-menu-btn" onclick="toggleMobileMenu()">☰</button>
             <h1>📅 Трекер ритуалов и задач</h1>
             <p class="subtitle">Не забудь о важном</p>
             <div class="calendar-info" id="calendar-info" style="display: none;">
@@ -22,8 +23,9 @@
             </div>
         </header>
 
+        <div class="mobile-menu-overlay" id="mobile-menu-overlay" onclick="toggleMobileMenu()"></div>
         <div class="main-layout">
-            <aside class="sidebar">
+            <aside class="sidebar" id="sidebar">
                 <div class="tabs tabs-vertical">
                     <button class="tab-btn active" data-tab="daily">Ежедневные ритуалы</button>
                     <button class="tab-btn" data-tab="master">Задачи от Господина</button>
