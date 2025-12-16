@@ -10,14 +10,20 @@ let editingItemId = null;
 let calendarId = null;
 let unsubscribeFirestore = null;
 let isInitialized = false;
+<<<<<<< HEAD
 let calendar = null;
+=======
+>>>>>>> 4ac112bd6ccc715026a59727989a0da75ac6e88a
 
 // Инициализация
 document.addEventListener('DOMContentLoaded', async () => {
     await initializeCalendar();
     setupTabs();
     setupForm();
+<<<<<<< HEAD
     initFullCalendar();
+=======
+>>>>>>> 4ac112bd6ccc715026a59727989a0da75ac6e88a
     checkReminders();
     setupReminderCheck();
     
@@ -326,8 +332,11 @@ function saveItem() {
 
     if (!name) return;
 
+<<<<<<< HEAD
     const baseExisting = editingItemId ? items[currentTab].find(i => i.id === editingItemId) : null;
 
+=======
+>>>>>>> 4ac112bd6ccc715026a59727989a0da75ac6e88a
     const item = {
         id: editingItemId || Date.now().toString(),
         name,
@@ -335,12 +344,17 @@ function saveItem() {
         reminder,
         time,
         day,
+<<<<<<< HEAD
         completed: editingItemId ? (baseExisting?.completed || false) : false,
         completedDate: editingItemId ? baseExisting?.completedDate : null,
         // для задач от Господина запоминаем день постановки
         createdDate: currentTab === 'master'
             ? (baseExisting?.createdDate || new Date().toISOString().split('T')[0])
             : baseExisting?.createdDate
+=======
+        completed: editingItemId ? items[currentTab].find(i => i.id === editingItemId)?.completed || false : false,
+        completedDate: editingItemId ? items[currentTab].find(i => i.id === editingItemId)?.completedDate : null
+>>>>>>> 4ac112bd6ccc715026a59727989a0da75ac6e88a
     };
 
     if (editingItemId) {
@@ -388,6 +402,7 @@ function renderAll() {
     renderList('daily');
     renderList('master');
     renderList('weekly');
+<<<<<<< HEAD
     updateCalendarEvents();
 }
 
@@ -480,6 +495,8 @@ function buildCalendarEvents() {
     });
 
     return events;
+=======
+>>>>>>> 4ac112bd6ccc715026a59727989a0da75ac6e88a
 }
 
 // Отрисовка списка
@@ -564,11 +581,19 @@ function checkReminders() {
         }
     });
 
+<<<<<<< HEAD
     // Проверяем задачи от Господина
     items.master.forEach(item => {
         if (item.reminder && item.time && !item.completed) {
             if (item.time === currentTime) {
                 showNotification(`Задача от Господина: ${item.name}`);
+=======
+    // Проверяем задачи от хозяина
+    items.master.forEach(item => {
+        if (item.reminder && item.time && !item.completed) {
+            if (item.time === currentTime) {
+                showNotification(`Задача от хозяина: ${item.name}`);
+>>>>>>> 4ac112bd6ccc715026a59727989a0da75ac6e88a
             }
         }
     });

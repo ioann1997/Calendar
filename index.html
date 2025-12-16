@@ -5,8 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Трекер ритуалов и задач</title>
     <link rel="stylesheet" href="styles.css">
+<<<<<<< HEAD
     <!-- FullCalendar -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/main.min.css">
+=======
+>>>>>>> 4ac112bd6ccc715026a59727989a0da75ac6e88a
     <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
@@ -22,6 +25,7 @@
             </div>
         </header>
 
+<<<<<<< HEAD
         <!-- Визуализация календаря (FullCalendar) -->
         <section class="calendar-wrapper">
             <div id="fullcalendar"></div>
@@ -30,6 +34,11 @@
         <div class="tabs">
             <button class="tab-btn active" data-tab="daily">Ежедневные ритуалы</button>
             <button class="tab-btn" data-tab="master">Задачи от Господина</button>
+=======
+        <div class="tabs">
+            <button class="tab-btn active" data-tab="daily">Ежедневные ритуалы</button>
+            <button class="tab-btn" data-tab="master">Задачи от хозяина</button>
+>>>>>>> 4ac112bd6ccc715026a59727989a0da75ac6e88a
             <button class="tab-btn" data-tab="weekly">Еженедельные ритуалы</button>
         </div>
 
@@ -42,10 +51,17 @@
             <div class="items-list" id="daily-list"></div>
         </div>
 
+<<<<<<< HEAD
         <!-- Задачи от Господина -->
         <div class="tab-content" id="master">
             <div class="section-header">
                 <h2>👑 Задачи от Господина</h2>
+=======
+        <!-- Задачи от хозяина -->
+        <div class="tab-content" id="master">
+            <div class="section-header">
+                <h2>👑 Задачи от хозяина</h2>
+>>>>>>> 4ac112bd6ccc715026a59727989a0da75ac6e88a
                 <button class="add-btn" onclick="addItem('master')">+ Добавить</button>
             </div>
             <div class="items-list" id="master-list"></div>
@@ -100,7 +116,10 @@
     </div>
 
     <script src="firebase-config.js"></script>
+<<<<<<< HEAD
     <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/main.min.js"></script>
+=======
+>>>>>>> 4ac112bd6ccc715026a59727989a0da75ac6e88a
     <script src="script.js"></script>
 </body>
 </html>
