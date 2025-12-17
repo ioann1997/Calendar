@@ -199,11 +199,39 @@ async function saveFCMToken(token) {
     try {
         console.log(`[FCM] Сохранение токена в календарь: ${calendarId}`);
         const calendarRef = db.collection('calendars').doc(calendarId);
+        
+        // Получаем текущие токены
+        const calendarDoc = await calendarRef.get();
+        const currentTokens = calendarDoc.data()?.fcmTokens || [];
+        
+        // Получаем старый токен этого устройства из localStorage
+        const oldToken = localStorage.getItem('fcmToken');
+        
+        // Удаляем старый токен этого устройства, если он есть
+        let updatedTokens = currentTokens.filter(t => t !== oldToken);
+        
+        // Добавляем новый токен, если его еще нет
+        if (!updatedTokens.includes(token)) {
+            updatedTokens.push(token);
+        }
+        
+        // Ограничиваем количество токенов (максимум 3 - для нескольких устройств)
+        // Оставляем только последние 3 токена
+        if (updatedTokens.length > 3) {
+            updatedTokens = updatedTokens.slice(-3);
+            console.log(`[FCM] Ограничение: оставлено только последние 3 токена`);
+        }
+        
+        // Сохраняем обновленный массив токенов
         await calendarRef.update({
-            fcmTokens: firebase.firestore.FieldValue.arrayUnion(token),
+            fcmTokens: updatedTokens,
             lastTokenUpdate: firebase.firestore.FieldValue.serverTimestamp()
         });
-        console.log(`[FCM] Токен сохранен в Firebase для календаря: ${calendarId}`);
+        
+        // Сохраняем новый токен в localStorage для следующего обновления
+        localStorage.setItem('fcmToken', token);
+        
+        console.log(`[FCM] Токен сохранен в Firebase для календаря: ${calendarId} (всего токенов: ${updatedTokens.length})`);
     } catch (error) {
         console.error('[FCM] Ошибка сохранения токена:', error);
     }
