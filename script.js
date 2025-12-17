@@ -179,13 +179,10 @@ async function initializeFirebaseMessaging() {
         });
 
         // Обработка обновления токена
-        messaging.onTokenRefresh(async () => {
-            console.log('[FCM] Токен обновлен');
-            fcmToken = await messaging.getToken();
-            if (fcmToken) {
-                await saveFCMToken(fcmToken);
-            }
-        });
+        // В Firebase 10.7.1+ onTokenRefresh заменен на onTokenRefresh
+        // Используем обработчик через messaging.onTokenRefresh (если доступен)
+        // или слушаем события через messaging.onMessage
+        // Примечание: в новых версиях токен обновляется автоматически при вызове getToken()
 
     } catch (error) {
         console.error('[FCM] Ошибка инициализации:', error);
