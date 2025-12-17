@@ -85,6 +85,9 @@ function getLocalDateString(date = new Date()) {
     return `${year}-${month}-${day}`;
 }
 
+// Глобальная переменная для хранения регистрации Service Worker
+let serviceWorkerRegistration = null;
+
 // Регистрация Service Worker для PWA
 async function registerServiceWorker() {
     if ('serviceWorker' in navigator) {
@@ -99,14 +102,14 @@ async function registerServiceWorker() {
             const swPath = `${basePath}/sw.js`;
             const swScope = basePath === '/' ? '/' : `${basePath}/`;
             
-            const registration = await navigator.serviceWorker.register(swPath, {
+            serviceWorkerRegistration = await navigator.serviceWorker.register(swPath, {
                 scope: swScope
             });
-            console.log('[PWA] Service Worker зарегистрирован:', registration.scope);
+            console.log('[PWA] Service Worker зарегистрирован:', serviceWorkerRegistration.scope);
 
             // Проверка обновлений
-            registration.addEventListener('updatefound', () => {
-                const newWorker = registration.installing;
+            serviceWorkerRegistration.addEventListener('updatefound', () => {
+                const newWorker = serviceWorkerRegistration.installing;
                 newWorker.addEventListener('statechange', () => {
                     if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
                         // Новый Service Worker доступен, можно обновить
@@ -147,12 +150,18 @@ async function initializeFirebaseMessaging() {
         // Получаем токен FCM
         const messaging = firebase.messaging();
         
-        // В Firebase 10.7.1+ Service Worker используется автоматически
-        // Не нужно вызывать messaging.useServiceWorker() - он устарел
+        // Ждем готовности Service Worker и передаем его в getToken
+        // Это нужно, чтобы Firebase использовал существующий Service Worker
+        // вместо попытки зарегистрировать firebase-messaging-sw.js
+        let registration = serviceWorkerRegistration;
+        if (!registration) {
+            registration = await navigator.serviceWorker.ready;
+        }
 
-        // Получаем токен
+        // Получаем токен с указанием Service Worker регистрации
         fcmToken = await messaging.getToken({
-            vapidKey: null // Если используешь VAPID ключ, укажи его здесь
+            vapidKey: null, // Если используешь VAPID ключ, укажи его здесь
+            serviceWorkerRegistration: registration
         });
 
         if (fcmToken) {

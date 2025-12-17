@@ -24,7 +24,7 @@ const STATIC_CACHE_URLS = [
   BASE_PATH + '/manifest.json',
   BASE_PATH + '/icon-192.png',
   BASE_PATH + '/icon-512.png',
-  'https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/main.min.css',
+  'https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.css',
   'https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js',
   'https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js',
   'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js',
