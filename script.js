@@ -13,15 +13,23 @@ let calendarId = null;
 let unsubscribeFirestore = null;
 let isInitialized = false;
 let calendar = null;
+let messaging = null;
+let fcmToken = null;
 
 // Инициализация
 document.addEventListener('DOMContentLoaded', async () => {
+    // Регистрация Service Worker для PWA
+    registerServiceWorker();
+    
     await initializeCalendar();
     setupTabs();
     setupForm();
     initFullCalendar();
     checkReminders();
     setupReminderCheck();
+    
+    // Инициализация Firebase Cloud Messaging для Push-уведомлений
+    initializeFirebaseMessaging();
     
     // Запрос разрешения на уведомления при загрузке
     if ('Notification' in window && Notification.permission === 'default') {
@@ -47,7 +55,6 @@ async function initializeCalendar() {
     }
     
     // Показываем информацию о календаре
-    showCalendarInfo();
     
     // Загружаем данные из Firebase
     await loadDataFromFirebase();
@@ -66,6 +73,118 @@ function getLocalDateString(date = new Date()) {
     const month = String(date.getMonth() + 1).padStart(2, '0');
     const day = String(date.getDate()).padStart(2, '0');
     return `${year}-${month}-${day}`;
+}
+
+// Регистрация Service Worker для PWA
+async function registerServiceWorker() {
+    if ('serviceWorker' in navigator) {
+        try {
+            const registration = await navigator.serviceWorker.register('/sw.js', {
+                scope: '/'
+            });
+            console.log('[PWA] Service Worker зарегистрирован:', registration.scope);
+
+            // Проверка обновлений
+            registration.addEventListener('updatefound', () => {
+                const newWorker = registration.installing;
+                newWorker.addEventListener('statechange', () => {
+                    if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                        // Новый Service Worker доступен, можно обновить
+                        console.log('[PWA] Доступна новая версия приложения');
+                        if (confirm('Доступна новая версия приложения. Обновить?')) {
+                            newWorker.postMessage({ type: 'SKIP_WAITING' });
+                            window.location.reload();
+                        }
+                    }
+                });
+            });
+
+            // Регистрация Service Worker для Firebase Messaging
+            if ('serviceWorker' in navigator) {
+                const messagingRegistration = await navigator.serviceWorker.register('/firebase-messaging-sw.js', {
+                    scope: '/'
+                });
+                console.log('[FCM] Firebase Messaging Service Worker зарегистрирован');
+            }
+        } catch (error) {
+            console.error('[PWA] Ошибка регистрации Service Worker:', error);
+        }
+    } else {
+        console.warn('[PWA] Service Worker не поддерживается');
+    }
+}
+
+// Инициализация Firebase Cloud Messaging
+async function initializeFirebaseMessaging() {
+    if (!('Notification' in window)) {
+        console.warn('[FCM] Уведомления не поддерживаются');
+        return;
+    }
+
+    try {
+        // Запрашиваем разрешение на уведомления
+        const permission = await Notification.requestPermission();
+        if (permission !== 'granted') {
+            console.log('[FCM] Разрешение на уведомления не предоставлено');
+            return;
+        }
+
+        // Получаем токен FCM
+        const messaging = firebase.messaging();
+        
+        // Устанавливаем Service Worker для FCM
+        if ('serviceWorker' in navigator) {
+            const registration = await navigator.serviceWorker.ready;
+            messaging.useServiceWorker(registration);
+        }
+
+        // Получаем токен
+        fcmToken = await messaging.getToken({
+            vapidKey: null // Если используешь VAPID ключ, укажи его здесь
+        });
+
+        if (fcmToken) {
+            console.log('[FCM] Токен получен:', fcmToken);
+            // Сохраняем токен в Firebase для отправки уведомлений
+            await saveFCMToken(fcmToken);
+        } else {
+            console.warn('[FCM] Не удалось получить токен');
+        }
+
+        // Обработка входящих сообщений (когда приложение открыто)
+        messaging.onMessage((payload) => {
+            console.log('[FCM] Получено сообщение:', payload);
+            showNotification(payload.notification?.body || payload.data?.body || 'Напоминание');
+        });
+
+        // Обработка обновления токена
+        messaging.onTokenRefresh(async () => {
+            console.log('[FCM] Токен обновлен');
+            fcmToken = await messaging.getToken();
+            if (fcmToken) {
+                await saveFCMToken(fcmToken);
+            }
+        });
+
+    } catch (error) {
+        console.error('[FCM] Ошибка инициализации:', error);
+    }
+}
+
+// Сохранение FCM токена в Firebase
+async function saveFCMToken(token) {
+    if (!calendarId) return;
+    
+    try {
+        const calendarRef = db.collection('calendars').doc(calendarId);
+        await calendarRef.update({
+            fcmTokens: firebase.firestore.FieldValue.arrayUnion(token),
+            lastTokenUpdate: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        console.log('[FCM] Токен сохранен в Firebase');
+    } catch (error) {
+        console.error('[FCM] Ошибка сохранения токена:', error);
+    }
 }
 
 // Переключение мобильного меню
@@ -526,7 +645,7 @@ function initFullCalendar() {
     if (!calendarEl || typeof FullCalendar === 'undefined') return;
 
     calendar = new FullCalendar.Calendar(calendarEl, {
-        initialView: 'dayGridWeek',
+        initialView: 'dayGridDay',
         locale: 'ru',
         firstDay: 1,
         height: 'auto',
@@ -534,7 +653,17 @@ function initFullCalendar() {
         headerToolbar: {
             left: 'prev,next today',
             center: 'title',
-            right: ''
+            right: 'dayGridDay,dayGridWeek'
+        },
+        views: {
+            dayGridDay: {
+                titleFormat: { year: 'numeric', month: 'long', day: 'numeric' },
+                buttonText: 'День'
+            },
+            dayGridWeek: {
+                titleFormat: { year: 'numeric', month: 'long', day: 'numeric' },
+                buttonText: 'Неделя'
+            }
         },
         dayMaxEvents: false,
         editable: false,
@@ -976,25 +1105,43 @@ function formatDate(dateString) {
 }
 
 // Показ уведомления
-function showNotification(message) {
+async function showNotification(message, title = 'Напоминание') {
     // Проверяем поддержку уведомлений
     if ('Notification' in window && Notification.permission === 'granted') {
-        new Notification('Напоминание', {
+        const notification = new Notification(title, {
             body: message,
-            icon: '📅'
+            icon: '/icon-192.png',
+            badge: '/icon-192.png',
+            tag: 'reminder',
+            requireInteraction: false,
+            vibrate: [200, 100, 200]
         });
+        
+        // Обработка клика по уведомлению
+        notification.onclick = () => {
+            window.focus();
+            notification.close();
+        };
     } else if ('Notification' in window && Notification.permission !== 'denied') {
-        Notification.requestPermission().then(permission => {
-            if (permission === 'granted') {
-                new Notification('Напоминание', {
-                    body: message,
-                    icon: '📅'
-                });
-            }
-        });
+        const permission = await Notification.requestPermission();
+        if (permission === 'granted') {
+            const notification = new Notification(title, {
+                body: message,
+                icon: '/icon-192.png',
+                badge: '/icon-192.png',
+                tag: 'reminder',
+                requireInteraction: false,
+                vibrate: [200, 100, 200]
+            });
+            
+            notification.onclick = () => {
+                window.focus();
+                notification.close();
+            };
+        }
     }
 
-    // Также показываем alert как запасной вариант
+    // Также логируем
     console.log('Напоминание:', message);
 }
 

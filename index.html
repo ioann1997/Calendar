@@ -3,24 +3,33 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Трекер ритуалов и задач</title>
+    <title>Совиная напоминалка</title>
+    
+    <!-- PWA Meta Tags -->
+    <meta name="theme-color" content="#ea580c">
+    <meta name="description" content="Трекер ритуалов и задач с напоминаниями">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="Напоминалка">
+    <link rel="apple-touch-icon" href="icon-192.png">
+    
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="manifest.json">
+    
     <link rel="stylesheet" href="styles.css">
     <!-- FullCalendar -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/main.min.css">
     <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-messaging-compat.js"></script>
 </head>
 <body>
     <div class="container">
         <header>
             <button class="mobile-menu-btn" id="mobile-menu-btn" onclick="toggleMobileMenu()">☰</button>
-            <h1>📅 Трекер ритуалов и задач</h1>
+            <h1>Совиная напоминалка</h1>
             <p class="subtitle">Не забудь о важном</p>
-            <div class="calendar-info" id="calendar-info" style="display: none;">
-                <p class="calendar-id">ID календаря: <span id="calendar-id-display"></span></p>
-                <button class="share-btn" onclick="shareCalendar()" title="Скопировать ссылку">🔗 Поделиться</button>
-            </div>
         </header>
 
         <div class="mobile-menu-overlay" id="mobile-menu-overlay" onclick="toggleMobileMenu()"></div>
@@ -131,5 +140,23 @@
     <!-- Важно: для JS используем index.global.min.js, а не main.min.js -->
     <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js"></script>
     <script src="script.js"></script>
+    
+    <script>
+        // Проверка поддержки PWA
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                console.log('[PWA] Приложение готово к установке');
+            });
+        }
+        
+        // Обработка события установки PWA
+        let deferredPrompt;
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            console.log('[PWA] Готово к установке');
+            // Можно показать кнопку "Установить приложение"
+        });
+    </script>
 </body>
 </html>
