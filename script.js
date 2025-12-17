@@ -89,8 +89,18 @@ function getLocalDateString(date = new Date()) {
 async function registerServiceWorker() {
     if ('serviceWorker' in navigator) {
         try {
-            const registration = await navigator.serviceWorker.register('/sw.js', {
-                scope: '/'
+            // Определяем базовый путь для GitHub Pages
+            // Убираем имя файла и лишние слэши из пути
+            let basePath = window.location.pathname.replace(/\/[^\/]*$/, '') || '/';
+            // Убираем завершающий слэш, если он есть (кроме корня)
+            if (basePath !== '/' && basePath.endsWith('/')) {
+                basePath = basePath.slice(0, -1);
+            }
+            const swPath = `${basePath}/sw.js`;
+            const swScope = basePath === '/' ? '/' : `${basePath}/`;
+            
+            const registration = await navigator.serviceWorker.register(swPath, {
+                scope: swScope
             });
             console.log('[PWA] Service Worker зарегистрирован:', registration.scope);
 
