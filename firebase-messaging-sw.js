@@ -26,8 +26,8 @@ messaging.onBackgroundMessage((payload) => {
     const notificationTitle = payload.notification?.title || 'Напоминание';
     const notificationOptions = {
         body: payload.notification?.body || 'Не забудь о важном!',
-        icon: payload.notification?.icon || '/icon-192.png',
-        badge: '/icon-192.png',
+        icon: payload.notification?.icon || '/calendar/icon-192.png',
+        badge: '/calendar/icon-192.png',
         tag: payload.data?.tag || 'reminder',
         data: payload.data || {},
         requireInteraction: false,
@@ -62,13 +62,13 @@ self.addEventListener('notificationclick', (event) => {
                 // Если есть открытое окно, фокусируемся на нем
                 for (let i = 0; i < clientList.length; i++) {
                     const client = clientList[i];
-                    if (client.url === '/' && 'focus' in client) {
+                    if (client.url.includes('/calendar') && 'focus' in client) {
                         return client.focus();
                     }
                 }
                 // Если нет открытого окна, открываем новое
                 if (clients.openWindow) {
-                    return clients.openWindow('/');
+                    return clients.openWindow('/calendar/');
                 }
             })
     );

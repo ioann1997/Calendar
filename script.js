@@ -46,9 +46,19 @@ async function initializeCalendar() {
     const urlParams = new URLSearchParams(window.location.search);
     calendarId = urlParams.get('c');
     
-    if (!calendarId) {
-        // Создаем новый calendarId
-        calendarId = generateCalendarId();
+    // Если calendarId есть в URL, сохраняем его в localStorage
+    if (calendarId) {
+        localStorage.setItem('calendarId', calendarId);
+    } else {
+        // Если нет в URL, проверяем localStorage
+        calendarId = localStorage.getItem('calendarId');
+        
+        if (!calendarId) {
+            // Создаем новый calendarId
+            calendarId = generateCalendarId();
+            localStorage.setItem('calendarId', calendarId);
+        }
+        
         // Обновляем URL без перезагрузки страницы
         const newUrl = window.location.origin + window.location.pathname + '?c=' + calendarId;
         window.history.replaceState({}, '', newUrl);
@@ -79,8 +89,8 @@ function getLocalDateString(date = new Date()) {
 async function registerServiceWorker() {
     if ('serviceWorker' in navigator) {
         try {
-            const registration = await navigator.serviceWorker.register('/sw.js', {
-                scope: '/'
+            const registration = await navigator.serviceWorker.register('/calendar/sw.js', {
+                scope: '/calendar/'
             });
             console.log('[PWA] Service Worker зарегистрирован:', registration.scope);
 
@@ -101,8 +111,8 @@ async function registerServiceWorker() {
 
             // Регистрация Service Worker для Firebase Messaging
             if ('serviceWorker' in navigator) {
-                const messagingRegistration = await navigator.serviceWorker.register('/firebase-messaging-sw.js', {
-                    scope: '/'
+                const messagingRegistration = await navigator.serviceWorker.register('/calendar/firebase-messaging-sw.js', {
+                    scope: '/calendar/'
                 });
                 console.log('[FCM] Firebase Messaging Service Worker зарегистрирован');
             }
