@@ -2,13 +2,30 @@ const {onSchedule} = require('firebase-functions/v2/scheduler');
 const admin = require('firebase-admin');
 admin.initializeApp();
 
+// Функция для генерации случайного сообщения напоминания
+function getRandomReminderMessage(ritualName) {
+  const messages = [
+    `Твой Господин ждёт, когда ты его порадуешь - ${ritualName}`,
+    `Напоминание от твоего Господина: ${ritualName} должно быть выполнено. Я ожидаю отчёта.`,
+    `Пора выполнить ${ritualName}, моя хорошая. Сделай это для меня — и ты заслужишь мою похвалу.`,
+    `Твой Господин проверяет твоё усердие. Готова ли ты доказать, что можешь безупречно выполнить "${ritualName}"?`,
+    `${ritualName}. Время пришло. Выполни. Это моя воля.`,
+    `Твой долг и твоя честь — исполнить ${ritualName}. Помни, кому ты принадлежишь. Служение начинается сейчас.`
+  ];
+  
+  // Выбираем случайное сообщение
+  const randomIndex = Math.floor(Math.random() * messages.length);
+  return messages[randomIndex];
+}
+
 // Функция, которая запускается каждую минуту и проверяет напоминания
 exports.checkAndSendReminders = onSchedule(
   {
     schedule: 'every 1 minutes',
     timeZone: 'Europe/Moscow', // ⚠️ ИЗМЕНИ НА СВОЙ ЧАСОВОЙ ПОЯС (например: 'Europe/Moscow', 'America/New_York')
     memory: '256MiB',
-    maxInstances: 1
+    maxInstances: 1,
+    region: 'us-central1' // Явно указываем регион
   },
   async (event) => {
     console.log('🦉 Проверка напоминаний...');
@@ -83,10 +100,11 @@ exports.checkAndSendReminders = onSchedule(
         for (const item of daily) {
           if (item.reminder && item.time === currentTime && !item.completed) {
             // Создаем сообщения для каждого токена
+            const reminderMessage = getRandomReminderMessage(item.name);
             const messages = fcmTokens.map(token => ({
               notification: {
                 title: '🦉 Напоминание',
-                body: `Ежедневный ритуал: ${item.name}`
+                body: reminderMessage
               },
               token: token
             }));
@@ -118,10 +136,11 @@ exports.checkAndSendReminders = onSchedule(
         for (const item of master) {
           if (item.reminder && item.time === currentTime && !item.completed) {
             // Создаем сообщения для каждого токена
+            const reminderMessage = getRandomReminderMessage(item.name);
             const messages = fcmTokens.map(token => ({
               notification: {
                 title: '🦉 Напоминание',
-                body: `Задача от Господина: ${item.name}`
+                body: reminderMessage
               },
               token: token
             }));
@@ -153,10 +172,11 @@ exports.checkAndSendReminders = onSchedule(
         for (const item of weekly) {
           if (item.reminder && item.day === currentDay && item.time === currentTime && !item.completed) {
             // Создаем сообщения для каждого токена
+            const reminderMessage = getRandomReminderMessage(item.name);
             const messages = fcmTokens.map(token => ({
               notification: {
                 title: '🦉 Напоминание',
-                body: `Еженедельный ритуал: ${item.name}`
+                body: reminderMessage
               },
               token: token
             }));
