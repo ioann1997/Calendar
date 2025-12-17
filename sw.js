@@ -4,7 +4,7 @@ const CACHE_NAME = 'sovinaya-napominalka-v2';
 const RUNTIME_CACHE = 'runtime-cache-v1';
 
 // Определяем базовый путь автоматически (для GitHub Pages)
-// Если sw.js находится в /Calendar/sw.js, то BASE_PATH будет /Calendar
+// Если sw.js находится в /calendar/sw.js, то BASE_PATH будет /calendar
 const BASE_PATH = (() => {
   let path = self.location.pathname.split('/sw.js')[0] || '';
   // Убираем завершающий слэш, если он есть (кроме корня)

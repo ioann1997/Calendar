@@ -1126,10 +1126,13 @@ function formatDate(dateString) {
 async function showNotification(message, title = 'Напоминание') {
     // Проверяем поддержку уведомлений
     if ('Notification' in window && Notification.permission === 'granted') {
+        // Определяем базовый путь для иконок
+        const basePath = window.location.pathname.replace(/\/[^\/]*$/, '') || '/calendar';
+        const iconPath = `${basePath}/icon-192.png`;
         const notification = new Notification(title, {
             body: message,
-            icon: '/icon-192.png',
-            badge: '/icon-192.png',
+            icon: iconPath,
+            badge: iconPath,
             tag: 'reminder',
             requireInteraction: false,
             vibrate: [200, 100, 200]
@@ -1143,10 +1146,13 @@ async function showNotification(message, title = 'Напоминание') {
     } else if ('Notification' in window && Notification.permission !== 'denied') {
         const permission = await Notification.requestPermission();
         if (permission === 'granted') {
+            // Определяем базовый путь для иконок
+            const basePath = window.location.pathname.replace(/\/[^\/]*$/, '') || '/calendar';
+            const iconPath = `${basePath}/icon-192.png`;
             const notification = new Notification(title, {
                 body: message,
-                icon: '/icon-192.png',
-                badge: '/icon-192.png',
+                icon: iconPath,
+                badge: iconPath,
                 tag: 'reminder',
                 requireInteraction: false,
                 vibrate: [200, 100, 200]
