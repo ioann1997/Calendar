@@ -114,20 +114,37 @@ async function registerServiceWorker() {
             });
             console.log('[PWA] Service Worker зарегистрирован:', serviceWorkerRegistration.scope);
 
+            // Проверка обновлений при загрузке страницы
+            if (serviceWorkerRegistration.waiting) {
+                // Если есть ожидающий Service Worker, активируем его сразу
+                serviceWorkerRegistration.waiting.postMessage({ type: 'SKIP_WAITING' });
+            }
+            
             // Проверка обновлений
             serviceWorkerRegistration.addEventListener('updatefound', () => {
                 const newWorker = serviceWorkerRegistration.installing;
                 newWorker.addEventListener('statechange', () => {
-                    if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                        // Новый Service Worker доступен, можно обновить
-                        console.log('[PWA] Доступна новая версия приложения');
-                        if (confirm('Доступна новая версия приложения. Обновить?')) {
+                    if (newWorker.state === 'installed') {
+                        if (navigator.serviceWorker.controller) {
+                            // Новый Service Worker доступен, активируем автоматически
+                            console.log('[PWA] Доступна новая версия приложения, обновляем автоматически');
                             newWorker.postMessage({ type: 'SKIP_WAITING' });
-                            window.location.reload();
+                            // Перезагружаем страницу через небольшую задержку
+                            setTimeout(() => {
+                                window.location.reload();
+                            }, 100);
+                        } else {
+                            // Первая установка
+                            console.log('[PWA] Service Worker установлен впервые');
                         }
                     }
                 });
             });
+            
+            // Периодическая проверка обновлений (каждые 60 секунд)
+            setInterval(() => {
+                serviceWorkerRegistration.update();
+            }, 60000);
 
             // Firebase Messaging будет использовать тот же Service Worker (sw.js)
             // Не нужно регистрировать отдельный firebase-messaging-sw.js
@@ -448,35 +465,43 @@ function saveData() {
     saveDataToFirebase();
 }
 
+// Переключение вкладки (вынесено в отдельную функцию для переиспользования)
+function switchTab(tabId) {
+    // Обновляем активные классы кнопок
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.classList.remove('active');
+        btn.style.color = 'var(--md-primary)';
+        btn.style.backgroundColor = 'transparent';
+        btn.style.opacity = '1';
+        if (btn.dataset.tab === tabId) {
+            btn.classList.add('active');
+            btn.style.color = 'var(--md-primary)';
+            btn.style.backgroundColor = '#EDEDF4';
+            btn.style.opacity = '1';
+        }
+    });
+    
+    // Обновляем контенты вкладок
+    document.querySelectorAll('.tab-content').forEach(content => {
+        content.classList.remove('active', 'block');
+        content.classList.add('hidden');
+        if (content.id === tabId) {
+            content.classList.add('active', 'block');
+            content.classList.remove('hidden');
+        }
+    });
+    
+    currentTab = tabId;
+}
+
 // Настройка вкладок
 function setupTabs() {
     const tabButtons = document.querySelectorAll('.tab-btn');
-    const tabContents = document.querySelectorAll('.tab-content');
 
     tabButtons.forEach(btn => {
         btn.addEventListener('click', () => {
             const tabId = btn.dataset.tab;
-            
-            // Обновляем активные классы
-            tabButtons.forEach(b => {
-                b.classList.remove('active');
-                b.style.color = 'var(--md-primary)';
-                b.style.backgroundColor = 'transparent';
-            });
-            tabContents.forEach(c => {
-                c.classList.remove('active', 'block');
-                c.classList.add('hidden');
-            });
-            
-            btn.classList.add('active');
-            btn.style.color = 'var(--md-primary)';
-            btn.style.backgroundColor = '#EDEDF4';
-            
-            const activeContent = document.getElementById(tabId);
-            activeContent.classList.add('active', 'block');
-            activeContent.classList.remove('hidden');
-            
-            currentTab = tabId;
+            switchTab(tabId);
             
             // Закрываем мобильное меню при выборе вкладки (только на мобильных)
             if (window.innerWidth <= 768) {
@@ -551,32 +576,9 @@ function setupReminderCheck() {
 // Добавление элемента
 function addItem(type) {
     editingItemId = null;
-    currentTab = type;
     
     // Переключаемся на нужную вкладку
-    document.querySelectorAll('.tab-btn').forEach(btn => {
-        btn.classList.remove('active');
-        btn.style.color = 'var(--md-on-surface-variant)';
-        btn.style.borderLeft = 'none';
-        btn.style.backgroundColor = 'transparent';
-        btn.style.opacity = '1';
-        if (btn.dataset.tab === type) {
-            btn.classList.add('active');
-            btn.style.color = 'var(--md-primary)';
-            btn.style.borderLeft = '2px solid var(--md-primary)';
-            btn.style.backgroundColor = 'var(--md-primary-container)';
-            btn.style.opacity = '0.12';
-        }
-    });
-    
-    document.querySelectorAll('.tab-content').forEach(content => {
-        content.classList.remove('active', 'block');
-        content.classList.add('hidden');
-        if (content.id === type) {
-            content.classList.add('active', 'block');
-            content.classList.remove('hidden');
-        }
-    });
+    switchTab(type);
 
     // Очищаем форму
     document.getElementById('item-form').reset();

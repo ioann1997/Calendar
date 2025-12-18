@@ -370,24 +370,6 @@
     font-weight: 400;
   }
   
-  /* Material Design 3 Tab Styles */
-  .tab-active {
-    font-family: 'Roboto', sans-serif;
-    font-weight: 500;
-    color: var(--md-primary);
-    border-left-color: var(--md-primary);
-    background-color: var(--md-primary-container);
-    @apply border-l-2;
-    opacity: 0.12;
-  }
-  
-  .tab-inactive {
-    font-family: 'Roboto', sans-serif;
-    font-weight: 500;
-    color: var(--md-on-surface-variant);
-    @apply hover:text-md-on-surface transition-colors;
-  }
-  
   /* Кнопки табов в сайдбаре */
   .tab-btn {
     font-family: 'Roboto', sans-serif;

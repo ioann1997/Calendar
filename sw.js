@@ -1,7 +1,7 @@
 // Service Worker для PWA и Firebase Cloud Messaging
 // Версия кэша - обновляй при изменении файлов
-const CACHE_NAME = 'sovinaya-napominalka-v2';
-const RUNTIME_CACHE = 'runtime-cache-v1';
+const CACHE_NAME = 'sovinaya-napominalka-v3';
+const RUNTIME_CACHE = 'runtime-cache-v2';
 
 // Определяем базовый путь автоматически (для GitHub Pages)
 // Если sw.js находится в /calendar/sw.js, то BASE_PATH будет /calendar
@@ -141,31 +141,37 @@ self.addEventListener('fetch', (event) => {
     return; // Используем сеть напрямую
   }
 
-  // Для статических файлов используем Cache First
+  // Для статических файлов используем Network First с проверкой обновлений
   if (STATIC_CACHE_URLS.some(staticUrl => request.url.includes(staticUrl.split('/').pop()))) {
     event.respondWith(
-      caches.match(request).then((cachedResponse) => {
-        return cachedResponse || fetch(request).then((response) => {
-          // Кэшируем новый ответ
+      fetch(request, { cache: 'no-cache' })
+        .then((response) => {
+          // Всегда используем свежий ответ из сети
           if (response.status === 200) {
+            // Обновляем кэш в фоне
             const responseToCache = response.clone();
             caches.open(CACHE_NAME).then((cache) => {
               cache.put(request, responseToCache);
             });
           }
           return response;
-        });
-      })
+        })
+        .catch(() => {
+          // Только если сеть недоступна, используем кэш
+          return caches.match(request).then((cachedResponse) => {
+            return cachedResponse;
+          });
+        })
     );
     return;
   }
 
-  // Для HTML страниц используем Network First
+  // Для HTML страниц используем Network First с проверкой обновлений
   if (request.mode === 'navigate' || (request.method === 'GET' && request.headers.get('accept').includes('text/html'))) {
     event.respondWith(
-      fetch(request)
+      fetch(request, { cache: 'no-cache' })
         .then((response) => {
-          // Клонируем ответ для кэша
+          // Всегда используем свежий HTML из сети
           const responseToCache = response.clone();
           caches.open(RUNTIME_CACHE).then((cache) => {
             cache.put(request, responseToCache);
@@ -186,11 +192,11 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Для остальных запросов - Network First
+  // Для остальных запросов - Network First с проверкой обновлений
   event.respondWith(
-    fetch(request)
+    fetch(request, { cache: 'no-cache' })
       .then((response) => {
-        // Кэшируем успешные ответы
+        // Всегда используем свежий ответ из сети
         if (response.status === 200) {
           const responseToCache = response.clone();
           caches.open(RUNTIME_CACHE).then((cache) => {
@@ -200,7 +206,7 @@ self.addEventListener('fetch', (event) => {
         return response;
       })
       .catch(() => {
-        // Используем кэш при ошибке сети
+        // Используем кэш только при ошибке сети
         return caches.match(request);
       })
   );
