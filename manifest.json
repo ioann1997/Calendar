@@ -7,7 +7,7 @@
   "display": "standalone",
   "orientation": "portrait",
   "background_color": "#fff7ed",
-  "theme_color": "#ea580c",
+  "theme_color": "#415f91",
   "icons": [
     {
       "src": "/calendar/icon-192.png",

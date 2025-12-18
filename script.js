@@ -31,6 +31,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Инициализируем календарь для получения calendarId (нужно для сохранения токена)
     await initializeCalendar();
     
+    // Диагностика PWA при загрузке
+    console.log('[PWA] Проверка статуса PWA при загрузке...');
+    const pwaStatus = isPWAInstalled();
+    console.log('[PWA] Приложение установлено как PWA:', pwaStatus);
+    console.log('[PWA] User Agent:', navigator.userAgent);
+    console.log('[PWA] Window dimensions:', window.innerWidth, 'x', window.innerHeight);
+    console.log('[PWA] Screen dimensions:', window.screen.width, 'x', window.screen.height);
+    
     // Проверяем уведомления ПЕРЕД полной инициализацией приложения
     // Если уведомления не включены, приложение будет заблокировано модальным окном
     checkAndShowNotificationsModal();
@@ -240,18 +248,6 @@ async function initializeFirebaseMessaging() {
         messaging.onMessage((payload) => {
             console.log('[FCM] 📨 Получено push-сообщение:', payload);
             showNotification(payload.notification?.body || payload.data?.body || 'Напоминание');
-        });
-
-        // Обработка обновления токена
-        messaging.onTokenRefresh(async () => {
-            console.log('[FCM] Токен обновлен');
-            const newToken = await messaging.getToken({
-                serviceWorkerRegistration: registration
-            });
-            if (newToken) {
-                fcmToken = newToken;
-                await saveFCMToken(newToken);
-            }
         });
 
     } catch (error) {
@@ -1410,16 +1406,33 @@ function updateThemeIcon(isDark) {
 // Проверка, установлено ли приложение как PWA
 function isPWAInstalled() {
     // Проверка для Android/Chrome - display-mode: standalone
-    if (window.matchMedia('(display-mode: standalone)').matches) {
-        return true;
-    }
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
     
     // Проверка для iOS Safari - navigator.standalone
-    if (window.navigator.standalone === true) {
-        return true;
-    }
+    const isIOSStandalone = window.navigator.standalone === true;
     
-    return false;
+    // Дополнительные проверки
+    // Проверка, что нет адресной строки (для некоторых браузеров)
+    const isFullscreen = window.matchMedia('(display-mode: fullscreen)').matches;
+    
+    // Проверка, запущено ли из главного экрана (для Android)
+    const isLaunchedFromHomeScreen = window.matchMedia('(display-mode: minimal-ui)').matches;
+    
+    // Проверка через window.screen (для некоторых случаев)
+    const hasNoAddressBar = window.screen.height - window.innerHeight < 100;
+    
+    const result = isStandalone || isIOSStandalone || isFullscreen || (isLaunchedFromHomeScreen && hasNoAddressBar);
+    
+    // Детальное логирование для диагностики
+    console.log('[PWA Check] Результаты проверки:');
+    console.log('  - display-mode: standalone:', isStandalone);
+    console.log('  - navigator.standalone:', isIOSStandalone);
+    console.log('  - display-mode: fullscreen:', isFullscreen);
+    console.log('  - display-mode: minimal-ui:', isLaunchedFromHomeScreen);
+    console.log('  - Нет адресной строки:', hasNoAddressBar);
+    console.log('  - Итоговый результат (PWA установлено):', result);
+    
+    return result;
 }
 
 // Проверка и показ модального окна для уведомлений
