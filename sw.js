@@ -1,7 +1,7 @@
 // Service Worker для PWA и Firebase Cloud Messaging
 // Версия кэша - обновляй при изменении файлов
-const CACHE_NAME = 'sovinaya-napominalka-v5';
-const RUNTIME_CACHE = 'runtime-cache-v4';
+const CACHE_NAME = 'sovinaya-napominalka-v6';
+const RUNTIME_CACHE = 'runtime-cache-v5';
 
 // Определяем базовый путь автоматически (для GitHub Pages)
 // Если sw.js находится в /calendar/sw.js, то BASE_PATH будет /calendar
@@ -53,32 +53,32 @@ firebase.initializeApp(firebaseConfig);
 const messaging = firebase.messaging();
 
 // Обработка фоновых сообщений от Firebase
-// ПРИМЕЧАНИЕ: Отключено для предотвращения дублирования уведомлений
-// Когда Firebase отправляет уведомление с полем "notification", оно автоматически показывается системой
-// Если включить onBackgroundMessage, будет показываться два уведомления:
-// 1. Системное уведомление от Firebase (правильное, с правильным текстом из payload.notification.body)
-// 2. Уведомление от Service Worker (дубликат)
-// 
-// Решение: не обрабатывать сообщения с полем "notification", так как они уже показываются автоматически
 messaging.onBackgroundMessage((payload) => {
     console.log('[FCM] Получено фоновое сообщение:', payload);
     
-    // Если уведомление уже содержит поле "notification", Firebase покажет его автоматически
-    // Не нужно показывать его еще раз через Service Worker
-    if (payload.notification) {
-        console.log('[FCM] Уведомление уже будет показано автоматически Firebase, пропускаем');
-        return;
-    }
+    // Извлекаем данные из payload
+    // Firebase отправляет данные в формате: { notification: { title, body }, data: {...} }
+    const notification = payload.notification || {};
+    const data = payload.data || {};
     
-    // Если нет поля "notification", но есть данные, можно показать уведомление вручную
-    // Но в нашем случае все уведомления отправляются с полем "notification", так что этот код не выполнится
-    const notificationTitle = payload.data?.title || 'Напоминание';
+    // Используем данные из notification (правильный текст из getRandomReminderMessage)
+    // или из data, если notification нет
+    const notificationTitle = notification.title || data.title || '🦉 Напоминание';
+    const notificationBody = notification.body || data.body || 'Не забудь о важном!';
+    
+    console.log('[FCM] Показываем уведомление:', {
+        title: notificationTitle,
+        body: notificationBody,
+        hasNotification: !!notification.body,
+        hasData: !!data.body
+    });
+    
     const notificationOptions = {
-        body: payload.data?.body || 'Не забудь о важном!',
-        icon: BASE_PATH + '/icon-192.png',
+        body: notificationBody,
+        icon: notification.icon || BASE_PATH + '/icon-192.png',
         badge: BASE_PATH + '/icon-192.png',
-        tag: payload.data?.tag || 'reminder',
-        data: payload.data || {},
+        tag: data.tag || 'reminder',
+        data: data,
         requireInteraction: false,
         vibrate: [200, 100, 200],
         actions: [
@@ -229,40 +229,61 @@ self.addEventListener('fetch', (event) => {
 });
 
 // Обработка push-уведомлений
+// ПРИМЕЧАНИЕ: Firebase Cloud Messaging обрабатывается через onBackgroundMessage
+// Этот обработчик может срабатывать для других типов push-уведомлений
+// Но если onBackgroundMessage не сработал, этот обработчик должен правильно извлечь данные
 self.addEventListener('push', (event) => {
   console.log('[SW] Получено push-уведомление');
   
-  let notificationData = {
-    title: 'Напоминание',
-    body: 'Не забудь о важном!',
-    icon: BASE_PATH + '/icon-192.png',
-    badge: BASE_PATH + '/icon-192.png',
-    tag: 'reminder',
-    requireInteraction: false,
-    vibrate: [200, 100, 200]
-  };
-
+  // Если это Firebase Cloud Messaging, оно должно обрабатываться через onBackgroundMessage
+  // Но на всякий случай обрабатываем и здесь
   if (event.data) {
     try {
       const data = event.data.json();
-      notificationData = {
-        title: data.title || notificationData.title,
-        body: data.body || notificationData.body,
-        icon: data.icon || notificationData.icon,
-        badge: data.badge || notificationData.badge,
-        tag: data.tag || notificationData.tag,
-        data: data.data || {},
-        requireInteraction: data.requireInteraction || false,
-        vibrate: data.vibrate || [200, 100, 200]
-      };
+      console.log('[SW] Данные push-уведомления:', data);
+      
+      // Извлекаем данные из Firebase Cloud Messaging формата
+      // Firebase отправляет данные в формате: { notification: { title, body }, data: {...} }
+      const notification = data.notification || {};
+      
+      // Если есть поле notification, Firebase должен показать уведомление автоматически
+      // Но если по какой-то причине это не произошло, показываем вручную
+      if (notification.title || notification.body) {
+        const notificationData = {
+          title: notification.title || '🦉 Напоминание',
+          body: notification.body || 'Не забудь о важном!',
+          icon: notification.icon || BASE_PATH + '/icon-192.png',
+          badge: BASE_PATH + '/icon-192.png',
+          tag: data.data?.tag || 'reminder',
+          data: data.data || {},
+          requireInteraction: false,
+          vibrate: [200, 100, 200],
+          actions: [
+            {
+              action: 'open',
+              title: 'Открыть'
+            },
+            {
+              action: 'close',
+              title: 'Закрыть'
+            }
+          ]
+        };
+        
+        console.log('[SW] Показываем уведомление из push-обработчика:', notificationData);
+        event.waitUntil(
+          self.registration.showNotification(notificationData.title, notificationData)
+        );
+        return;
+      }
     } catch (e) {
-      notificationData.body = event.data.text();
+      console.error('[SW] Ошибка обработки push-уведомления:', e);
     }
   }
-
-  event.waitUntil(
-    self.registration.showNotification(notificationData.title, notificationData)
-  );
+  
+  // Если данные не распарсились или нет notification, не показываем дефолтное уведомление
+  // Firebase должен показать уведомление автоматически через onBackgroundMessage
+  console.log('[SW] Push-уведомление обработано, но не показано (ожидается обработка через onBackgroundMessage)');
 });
 
 // Обработка клика по уведомлению
