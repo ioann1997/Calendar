@@ -24,12 +24,10 @@
     <!-- PWA Manifest -->
     <link rel="manifest" href="manifest.json">
     
-    <!-- Google Fonts - Roboto -->
+    <!-- Google Fonts - Gabriela, Roboto, Roboto Flex -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
-    <!-- Old Style Serif Font -->
-    <link href="https://fonts.googleapis.com/css2?family=Crimson+Text:ital,wght@0,400;0,600;1,400&family=Playfair+Display:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Gabriela&family=Roboto:wght@300;400;500;700&family=Roboto+Flex:opsz,wght@8..144,300..1000&display=swap" rel="stylesheet">
     
     <link rel="stylesheet" href="styles.css">
     <style>
@@ -58,11 +56,12 @@
         .fc .fc-today-button,
         .fc-button-primary.fc-today-button,
         button.fc-today-button {
+            font-family: 'Roboto', sans-serif !important;
+            font-weight: 500 !important;
             background-color: #705575 !important;
             border-color: #705575 !important;
             color: #FFFFFF !important;
             border-radius: 20px !important;
-            font-weight: 500;
             padding: 0.5rem 1rem !important;
         }
         
@@ -141,13 +140,13 @@
                 </svg>
             </button>
             <h1 class="text-3xl font-normal mb-2 text-md-on-primary">Совиная напоминалка</h1>
-            <p class="text-base opacity-70 text-md-on-primary">Не забудь о важном</p>
+            <p class="subtitle text-base opacity-70 text-md-on-primary">Не забудь о важном</p>
         </header>
 
         <div class="hidden fixed inset-0 bg-black/50 z-40 backdrop-blur-sm" id="mobile-menu-overlay" onclick="toggleMobileMenu()"></div>
         <div class="flex gap-5 p-6">
             <aside class="w-56 flex-shrink-0 hidden md:block" id="sidebar" style="background-color: transparent;">
-                <div class="flex flex-col gap-2 rounded-md-lg p-4" style="font-family: 'Crimson Text', 'Playfair Display', 'Times New Roman', 'Georgia', serif; background-color: var(--md-surface);">
+                <div class="flex flex-col gap-2 rounded-md-lg p-4" style="font-family: 'Gabriela', serif; background-color: var(--md-surface);">
                     <button class="tab-btn text-left px-5 py-4 rounded-md transition-colors active" data-tab="daily" style="color: var(--md-primary); background-color: #EDEDF4;">Ежедневные ритуалы</button>
                     <button class="tab-btn text-left px-5 py-4 rounded-md transition-colors" data-tab="master" style="color: var(--md-primary); background-color: transparent;" onmouseover="this.style.backgroundColor='#EDEDF4';" onmouseout="if(!this.classList.contains('active')){this.style.backgroundColor='transparent';}">Задачи от Господина</button>
                     <button class="tab-btn text-left px-5 py-4 rounded-md transition-colors" data-tab="weekly" style="color: var(--md-primary); background-color: transparent;" onmouseover="this.style.backgroundColor='#EDEDF4';" onmouseout="if(!this.classList.contains('active')){this.style.backgroundColor='transparent';}">Еженедельные ритуалы</button>
@@ -164,50 +163,45 @@
 
                 <!-- Ежедневные ритуалы -->
                 <div class="tab-content block p-8 min-h-[400px] active" id="daily">
-                    <div class="flex justify-between items-center mb-6">
-                        <h2 class="text-2xl font-normal m-0" style="color: var(--md-on-surface);">Ежедневные ритуалы</h2>
-                        <button class="btn-primary" onclick="addItem('daily')">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
-                            </svg>
-                            Добавить
-                        </button>
+                    <div class="flex justify-between items-center mb-6 gap-3 flex-wrap">
+                        <h2 class="section-title text-xl font-normal m-0" style="color: var(--md-primary); font-family: 'Gabriela', serif;">Ежедневные ритуалы</h2>
+                        <button class="btn-add flex-shrink-0" onclick="addItem('daily')" style="background-color: #d6e3ff; color: var(--md-primary); width: 2.5rem; height: 2.5rem; min-width: 2.5rem; min-height: 2.5rem; border-radius: 0.75rem; border: none; display: inline-flex; align-items: center; justify-content: center; box-shadow: 0 2px 4px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1); padding: 0; font-size: 1.25rem; font-weight: 500; line-height: 1;">+</button>
                     </div>
                     <div class="flex flex-col gap-4" id="daily-list"></div>
                 </div>
 
                 <!-- Задачи от Господина -->
                 <div class="tab-content hidden p-8 min-h-[400px]" id="master">
-                    <div class="flex justify-between items-center mb-6">
-                        <h2 class="text-2xl font-normal m-0 text-md-on-surface">Задачи от Господина</h2>
-                        <button class="btn-primary" onclick="addItem('master')">+ Добавить</button>
+                    <div class="flex justify-between items-center mb-6 gap-3 flex-wrap">
+                        <h2 class="section-title text-xl font-normal m-0" style="color: var(--md-primary); font-family: 'Gabriela', serif;">Задачи от Господина</h2>
+                        <button class="btn-add flex-shrink-0" onclick="addItem('master')" style="background-color: #d6e3ff; color: var(--md-primary); width: 2.5rem; height: 2.5rem; min-width: 2.5rem; min-height: 2.5rem; border-radius: 0.75rem; border: none; display: inline-flex; align-items: center; justify-content: center; box-shadow: 0 2px 4px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1); padding: 0; font-size: 1.25rem; font-weight: 500; line-height: 1;">+</button>
                     </div>
                     <div class="flex flex-col gap-4" id="master-list"></div>
                 </div>
 
                 <!-- Еженедельные ритуалы -->
                 <div class="tab-content hidden p-8 min-h-[400px]" id="weekly">
-                    <div class="flex justify-between items-center mb-6">
-                        <h2 class="text-2xl font-normal m-0 text-md-on-surface">Еженедельные ритуалы</h2>
-                        <button class="btn-primary" onclick="addItem('weekly')">+ Добавить</button>
+                    <div class="flex justify-between items-center mb-6 gap-3 flex-wrap">
+                        <h2 class="section-title text-xl font-normal m-0" style="color: var(--md-primary); font-family: 'Gabriela', serif;">Еженедельные ритуалы</h2>
+                        <button class="btn-add flex-shrink-0" onclick="addItem('weekly')" style="background-color: #d6e3ff; color: var(--md-primary); width: 2.5rem; height: 2.5rem; min-width: 2.5rem; min-height: 2.5rem; border-radius: 0.75rem; border: none; display: inline-flex; align-items: center; justify-content: center; box-shadow: 0 2px 4px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1); padding: 0; font-size: 1.25rem; font-weight: 500; line-height: 1;">+</button>
                     </div>
                     <div class="flex flex-col gap-4" id="weekly-list"></div>
                 </div>
 
                 <!-- Правила -->
                 <div class="tab-content hidden p-8 min-h-[400px]" id="rules">
-                    <div class="flex justify-between items-center mb-6">
-                        <h2 class="text-2xl font-normal m-0 text-md-on-surface">Правила</h2>
-                        <button class="btn-primary" onclick="addItem('rules')">+ Добавить</button>
+                    <div class="flex justify-between items-center mb-6 gap-3 flex-wrap">
+                        <h2 class="section-title text-xl font-normal m-0" style="color: var(--md-primary); font-family: 'Gabriela', serif;">Правила</h2>
+                        <button class="btn-add flex-shrink-0" onclick="addItem('rules')" style="background-color: #d6e3ff; color: var(--md-primary); width: 2.5rem; height: 2.5rem; min-width: 2.5rem; min-height: 2.5rem; border-radius: 0.75rem; border: none; display: inline-flex; align-items: center; justify-content: center; box-shadow: 0 2px 4px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1); padding: 0; font-size: 1.25rem; font-weight: 500; line-height: 1;">+</button>
                     </div>
                     <div class="flex flex-col gap-4" id="rules-list"></div>
                 </div>
 
                 <!-- Запреты -->
                 <div class="tab-content hidden p-8 min-h-[400px]" id="bans">
-                    <div class="flex justify-between items-center mb-6">
-                        <h2 class="text-2xl font-normal m-0 text-md-on-surface">Запреты</h2>
-                        <button class="btn-primary" onclick="addItem('bans')">+ Добавить</button>
+                    <div class="flex justify-between items-center mb-6 gap-3 flex-wrap">
+                        <h2 class="section-title text-xl font-normal m-0" style="color: var(--md-primary); font-family: 'Gabriela', serif;">Запреты</h2>
+                        <button class="btn-add flex-shrink-0" onclick="addItem('bans')" style="background-color: #d6e3ff; color: var(--md-primary); width: 2.5rem; height: 2.5rem; min-width: 2.5rem; min-height: 2.5rem; border-radius: 0.75rem; border: none; display: inline-flex; align-items: center; justify-content: center; box-shadow: 0 2px 4px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1); padding: 0; font-size: 1.25rem; font-weight: 500; line-height: 1;">+</button>
                     </div>
                     <div class="flex flex-col gap-4" id="bans-list"></div>
                 </div>

@@ -44,7 +44,9 @@ module.exports = {
         'md-surface-container-highest': '#E2E2E9',
       },
       fontFamily: {
+        'gabriela': ['Gabriela', 'serif'],
         'roboto': ['Roboto', 'sans-serif'],
+        'roboto-flex': ['Roboto Flex', 'sans-serif'],
       },
       borderRadius: {
         'md': '12px',

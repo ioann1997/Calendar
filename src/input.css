@@ -68,6 +68,8 @@
   
   body {
     @apply font-roboto antialiased;
+    font-family: 'Roboto', sans-serif;
+    font-weight: 400;
     background-image: url('wallpaper.jpg');
     background-size: cover;
     background-position: center;
@@ -76,6 +78,51 @@
     color: var(--md-on-surface);
     position: relative;
     min-height: 100vh;
+  }
+  
+  /* Убеждаемся, что все элементы наследуют правильный шрифт по умолчанию */
+  * {
+    font-family: inherit;
+  }
+  
+  /* Явно задаем Roboto для всех текстовых элементов по умолчанию */
+  p, span, div, a, li, td, th, button:not(.btn-primary):not(.btn-outlined):not(.btn-text):not(.btn-icon):not(.btn-fab):not(.btn-assist):not(.tab-btn) {
+    font-family: 'Roboto', sans-serif;
+    font-weight: 400;
+  }
+  
+  /* Заголовки - Gabriela */
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Gabriela', serif !important;
+  }
+  
+  /* Заголовки секций рядом с кнопками - меньший размер */
+  .section-title {
+    font-family: 'Gabriela', serif !important;
+    color: var(--md-primary);
+  }
+  
+  /* Убеждаемся, что все h2 с классом section-title используют Gabriela */
+  h2.section-title {
+    font-family: 'Gabriela', serif !important;
+  }
+  
+  /* Переопределяем для всех заголовков секций */
+  h2.section-title.text-xl {
+    font-family: 'Gabriela', serif !important;
+  }
+  
+  /* Мобильная версия - еще меньше размер заголовков секций */
+  @media (max-width: 768px) {
+    .section-title {
+      font-size: 1.125rem; /* text-lg */
+      line-height: 1.5rem;
+    }
+  }
+  
+  /* Подзаголовки - Gabriela */
+  .subtitle, p.subtitle, .subheading {
+    font-family: 'Gabriela', serif;
   }
   
   body::before {
@@ -116,11 +163,52 @@
 
 @layer components {
   /* Material Design 3 Button Styles */
+  /* Add Button - квадратная кнопка с + */
+  .btn-add {
+    font-family: 'Roboto', sans-serif !important;
+    font-weight: 500 !important;
+    font-size: 1.25rem !important;
+    background-color: #d6e3ff !important;
+    color: var(--md-primary) !important;
+    width: 2.5rem !important;
+    height: 2.5rem !important;
+    min-width: 2.5rem !important;
+    min-height: 2.5rem !important;
+    border-radius: 0.75rem !important;
+    border: none !important;
+    cursor: pointer !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    box-shadow: 0 2px 4px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1) !important;
+    transition: all 0.2s ease !important;
+    line-height: 1 !important;
+  }
+  
+  .btn-add:hover {
+    background-color: #c4d5ff !important;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.15), 0 2px 4px -2px rgba(0, 0, 0, 0.1) !important;
+    transform: translateY(-1px) !important;
+  }
+  
+  .btn-add:active {
+    transform: translateY(0) !important;
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.1) !important;
+  }
+  
+  .btn-add:focus {
+    outline: none !important;
+  }
+  
   /* Filled Button - основной стиль (как на картинке) */
   .btn-primary {
+    font-family: 'Roboto', sans-serif;
+    font-weight: 500;
     background-color: var(--md-primary);
     color: var(--md-on-primary);
-    @apply px-6 py-3 rounded-full font-medium 
+    @apply px-6 py-3 rounded-full 
            hover:opacity-90 active:opacity-80 transition-all duration-200;
     border: none;
     cursor: pointer;
@@ -133,10 +221,12 @@
   
   /* Outlined Button - кнопка с обводкой */
   .btn-outlined {
+    font-family: 'Roboto', sans-serif;
+    font-weight: 500;
     background-color: transparent;
     color: var(--md-primary);
     border: 1px solid var(--md-outline);
-    @apply px-6 py-3 rounded-full font-medium 
+    @apply px-6 py-3 rounded-full 
            hover:bg-md-primary-container/10 active:bg-md-primary-container/20 
            transition-all duration-200;
     cursor: pointer;
@@ -148,10 +238,12 @@
   
   /* Text Button - текстовая кнопка */
   .btn-text {
+    font-family: 'Roboto', sans-serif;
+    font-weight: 500;
     background-color: transparent;
     color: var(--md-primary);
     border: none;
-    @apply px-4 py-2 rounded-full font-medium 
+    @apply px-4 py-2 rounded-full 
            hover:bg-md-primary-container/10 active:bg-md-primary-container/20 
            transition-all duration-200;
     cursor: pointer;
@@ -195,9 +287,11 @@
   
   /* Assist Button - кнопка с иконкой информации */
   .btn-assist {
+    font-family: 'Roboto', sans-serif;
+    font-weight: 500;
     background-color: var(--md-primary-container);
     color: var(--md-on-primary-container);
-    @apply px-4 py-2 rounded-full font-medium
+    @apply px-4 py-2 rounded-full
            hover:opacity-90 active:opacity-80
            transition-all duration-200;
     border: none;
@@ -206,6 +300,17 @@
     align-items: center;
     justify-content: center;
     gap: 0.5rem;
+  }
+  
+  /* Интерфейсные элементы - Roboto Flex для акцентов */
+  .label, label, .input-md, input, textarea, select {
+    font-family: 'Roboto', sans-serif;
+    font-weight: 400;
+  }
+  
+  /* Акцентные элементы - Roboto Flex */
+  .accent, .badge, .chip {
+    font-family: 'Roboto Flex', sans-serif;
   }
   
   /* Material Design 3 Card Styles */
@@ -234,6 +339,8 @@
   
   /* Material Design 3 Input Styles */
   .input-md {
+    font-family: 'Roboto', sans-serif;
+    font-weight: 400;
     background-color: var(--md-surface);
     color: var(--md-on-surface);
     border-color: var(--md-outline-variant);
@@ -243,28 +350,75 @@
            transition-all duration-200;
   }
   
+  .input-md::placeholder {
+    font-family: 'Roboto', sans-serif;
+    font-weight: 400;
+  }
+  
+  textarea.input-md::placeholder {
+    font-family: 'Roboto', sans-serif;
+    font-weight: 400;
+  }
+  
+  select.input-md {
+    font-family: 'Roboto', sans-serif;
+    font-weight: 400;
+  }
+  
+  select.input-md option {
+    font-family: 'Roboto', sans-serif;
+    font-weight: 400;
+  }
+  
   /* Material Design 3 Tab Styles */
   .tab-active {
+    font-family: 'Roboto', sans-serif;
+    font-weight: 500;
     color: var(--md-primary);
     border-left-color: var(--md-primary);
     background-color: var(--md-primary-container);
-    @apply border-l-2 font-medium;
+    @apply border-l-2;
     opacity: 0.12;
   }
   
   .tab-inactive {
+    font-family: 'Roboto', sans-serif;
+    font-weight: 500;
     color: var(--md-on-surface-variant);
     @apply hover:text-md-on-surface transition-colors;
   }
   
+  /* Кнопки табов в сайдбаре */
+  .tab-btn {
+    font-family: 'Roboto', sans-serif;
+    font-weight: 500;
+  }
+  
   /* Empty State */
   .empty-state {
+    font-family: 'Roboto', sans-serif;
+    font-weight: 400;
     color: var(--md-on-surface-variant);
     @apply text-center py-12 px-5;
   }
   
   .empty-state-icon {
     @apply text-5xl mb-4;
+  }
+  
+  /* Модальное окно */
+  #modal h3 {
+    font-family: 'Gabriela', serif;
+  }
+  
+  #modal label {
+    font-family: 'Roboto', sans-serif;
+    font-weight: 400;
+  }
+  
+  #modal select {
+    font-family: 'Roboto', sans-serif;
+    font-weight: 400;
   }
   
   /* Color Indicator */
@@ -274,6 +428,8 @@
   
   /* Inactive Badge */
   .inactive-badge {
+    font-family: 'Roboto Flex', sans-serif;
+    font-weight: 500;
     background-color: var(--md-surface-variant);
     border-color: var(--md-outline-variant);
     color: #573E5C;
@@ -282,6 +438,8 @@
   
   /* Item Meta */
   .item-meta {
+    font-family: 'Roboto', sans-serif;
+    font-weight: 400;
     color: #573E5C;
     opacity: 0.7;
     @apply text-xs mt-2 flex gap-3 flex-wrap;
@@ -289,6 +447,8 @@
   
   /* Item Description - ограничение до 2-3 строк */
   .item-description {
+    font-family: 'Roboto', sans-serif;
+    font-weight: 400;
     display: -webkit-box;
     -webkit-line-clamp: 3;
     -webkit-box-orient: vertical;
@@ -298,8 +458,15 @@
     max-height: calc(1.4em * 3);
   }
   
+  /* Названия элементов в списке */
+  .text-base.font-medium {
+    font-family: 'Roboto', sans-serif;
+    font-weight: 500;
+  }
+  
   /* FullCalendar Material Design 3 Styles - Light */
   .fc {
+    font-family: 'Roboto', sans-serif;
     --fc-page-bg-color: transparent;
     --fc-neutral-bg-color: var(--md-container);
     --fc-neutral-text-color: var(--md-on-surface-variant);
@@ -316,6 +483,18 @@
     --fc-more-link-bg-color: var(--md-container);
     --fc-today-bg-color: rgba(65, 95, 145, 0.1);
     --fc-highlight-color: rgba(65, 95, 145, 0.2);
+  }
+  
+  /* Все кнопки FullCalendar */
+  .fc .fc-button {
+    font-family: 'Roboto', sans-serif;
+    font-weight: 500;
+  }
+  
+  /* События календаря */
+  .fc-event-title, .fc-event-time {
+    font-family: 'Roboto', sans-serif;
+    font-weight: 400;
   }
   
   .dark .fc {
@@ -341,13 +520,15 @@
   }
   
   .fc .fc-toolbar-title {
+    font-family: 'Roboto', sans-serif;
+    font-weight: 400;
     color: var(--md-on-surface);
-    @apply font-normal;
   }
   
   .fc .fc-col-header-cell-cushion {
+    font-family: 'Roboto', sans-serif;
+    font-weight: 500;
     color: var(--md-on-surface-variant);
-    @apply font-medium;
   }
   
   /* Мобильная версия - уменьшаем размеры */
@@ -390,12 +571,15 @@
   }
   
   .fc .fc-daygrid-day-number {
+    font-family: 'Roboto', sans-serif;
+    font-weight: 400;
     color: var(--md-on-surface);
   }
   
   .fc .fc-day-today .fc-daygrid-day-number {
+    font-family: 'Roboto', sans-serif;
+    font-weight: 500;
     color: var(--md-primary);
-    @apply font-medium;
   }
   
   /* Принудительно применяем цвета событий из JavaScript - не переопределяем CSS переменными */
@@ -410,9 +594,21 @@
     /* Цвета задаются напрямую в JavaScript */
   }
   
+  /* Выполненные события - зачеркивание текста */
+  .fc-event-completed .fc-event-title,
+  .fc-event-completed .fc-event-time {
+    text-decoration: line-through !important;
+  }
+  
+  .fc-event-completed {
+    text-decoration: line-through !important;
+  }
+  
   /* Кнопки влево/вправо - primary container с primary цветом галочек */
   .fc .fc-button-prev,
   .fc .fc-button-next {
+    font-family: 'Roboto', sans-serif;
+    font-weight: 500;
     background-color: var(--md-primary-container) !important;
     border-color: var(--md-primary-container) !important;
     color: var(--md-primary) !important;
@@ -435,11 +631,12 @@
   .fc .fc-today-button,
   .fc-button-primary.fc-today-button,
   button.fc-today-button {
+    font-family: 'Roboto', sans-serif;
+    font-weight: 500;
     background-color: #705575 !important;
     border-color: #705575 !important;
     color: #FFFFFF !important;
     border-radius: 20px !important;
-    font-weight: 500;
     padding: 0.5rem 1rem !important;
   }
   

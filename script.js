@@ -499,19 +499,21 @@ function setupForm() {
     const timeGroup = document.getElementById('time-group');
     const dayGroup = document.getElementById('day-group');
 
+    if (!form || !reminderCheckbox) return;
+
     reminderCheckbox.addEventListener('change', () => {
         if (reminderCheckbox.checked) {
-            timeGroup.classList.remove('hidden');
-            timeGroup.classList.add('flex');
+            timeGroup?.classList.remove('hidden');
+            timeGroup?.classList.add('flex');
             if (currentTab === 'weekly') {
-                dayGroup.classList.remove('hidden');
-                dayGroup.classList.add('flex');
+                dayGroup?.classList.remove('hidden');
+                dayGroup?.classList.add('flex');
             }
         } else {
-            timeGroup.classList.add('hidden');
-            timeGroup.classList.remove('flex');
-            dayGroup.classList.add('hidden');
-            dayGroup.classList.remove('flex');
+            timeGroup?.classList.add('hidden');
+            timeGroup?.classList.remove('flex');
+            dayGroup?.classList.add('hidden');
+            dayGroup?.classList.remove('flex');
         }
     });
 
@@ -592,34 +594,38 @@ function addItem(type) {
     document.getElementById('modal-title').textContent = titles[type] || 'Добавить задачу';
     
     // Скрываем/показываем поля в зависимости от типа
-    const reminderGroup = document.getElementById('item-reminder').closest('.flex');
+    const reminderGroup = document.getElementById('item-reminder')?.closest('.flex');
     const timeGroup = document.getElementById('time-group');
     const dayGroup = document.getElementById('day-group');
-    const colorGroup = document.getElementById('color-group');
+    const colorGroup = document.getElementById('color-group'); // Может быть null, если элемент удален из HTML
     const isActiveGroup = document.getElementById('is-active-group');
     
     if (isSimpleList) {
         reminderGroup?.classList.add('hidden');
-        timeGroup.classList.add('hidden');
-        dayGroup.classList.add('hidden');
-        colorGroup.classList.add('hidden');
-        isActiveGroup.classList.add('hidden');
+        timeGroup?.classList.add('hidden');
+        dayGroup?.classList.add('hidden');
+        colorGroup?.classList.add('hidden');
+        isActiveGroup?.classList.add('hidden');
     } else {
         reminderGroup?.classList.remove('hidden');
-        timeGroup.classList.add('hidden');
-        dayGroup.classList.add('hidden');
+        timeGroup?.classList.add('hidden');
+        dayGroup?.classList.add('hidden');
         // Поле is_active только для ежедневных ритуалов (цвет убран - используются статичные цвета)
         if (type === 'daily') {
-            colorGroup.classList.add('hidden'); // Всегда скрыто
-            isActiveGroup.classList.remove('hidden');
+            colorGroup?.classList.add('hidden'); // Всегда скрыто (если элемент существует)
+            isActiveGroup?.classList.remove('hidden');
         } else {
-            colorGroup.classList.add('hidden');
-            isActiveGroup.classList.add('hidden');
+            colorGroup?.classList.add('hidden');
+            isActiveGroup?.classList.add('hidden');
         }
     }
     
     // Показываем модальное окно
     const modal = document.getElementById('modal');
+    if (!modal) {
+        console.error('[addItem] Модальное окно не найдено');
+        return;
+    }
     modal.classList.remove('hidden');
     modal.classList.add('flex');
 }
@@ -639,47 +645,57 @@ function editItem(type, id) {
     // Для правил и запретов - простая форма
     const isSimpleList = type === 'rules' || type === 'bans';
     
-    const reminderGroup = document.getElementById('item-reminder').closest('.flex');
+    const reminderGroup = document.getElementById('item-reminder')?.closest('.flex');
     const timeGroup = document.getElementById('time-group');
     const dayGroup = document.getElementById('day-group');
-    const colorGroup = document.getElementById('color-group');
+    const colorGroup = document.getElementById('color-group'); // Может быть null, если элемент удален из HTML
     const isActiveGroup = document.getElementById('is-active-group');
     
     if (isSimpleList) {
         reminderGroup?.classList.add('hidden');
-        timeGroup.classList.add('hidden');
-        dayGroup.classList.add('hidden');
-        colorGroup.classList.add('hidden');
-        isActiveGroup.classList.add('hidden');
+        timeGroup?.classList.add('hidden');
+        dayGroup?.classList.add('hidden');
+        colorGroup?.classList.add('hidden');
+        isActiveGroup?.classList.add('hidden');
     } else {
         reminderGroup?.classList.remove('hidden');
-        document.getElementById('item-reminder').checked = item.reminder || false;
+        const reminderCheckbox = document.getElementById('item-reminder');
+        if (reminderCheckbox) {
+            reminderCheckbox.checked = item.reminder || false;
+        }
         
         // Заполняем поля для ежедневных ритуалов
         if (type === 'daily') {
-            colorGroup.classList.add('hidden'); // Всегда скрыто
-            isActiveGroup.classList.remove('hidden');
+            colorGroup?.classList.add('hidden'); // Всегда скрыто (если элемент существует)
+            isActiveGroup?.classList.remove('hidden');
             // Цвет не сохраняется - используются статичные цвета
-            document.getElementById('item-is-active').checked = item.is_active !== false;
+            const isActiveCheckbox = document.getElementById('item-is-active');
+            if (isActiveCheckbox) {
+                isActiveCheckbox.checked = item.is_active !== false;
+            }
         } else {
-            colorGroup.classList.add('hidden');
-            isActiveGroup.classList.add('hidden');
+            colorGroup?.classList.add('hidden');
+            isActiveGroup?.classList.add('hidden');
         }
         
         if (item.reminder) {
-            timeGroup.classList.remove('hidden');
-            if (item.time) {
-                document.getElementById('item-time').value = item.time;
+            timeGroup?.classList.remove('hidden');
+            const timeInput = document.getElementById('item-time');
+            if (timeInput && item.time) {
+                timeInput.value = item.time;
             }
             if (type === 'weekly' && item.day) {
-                dayGroup.classList.remove('hidden');
-                document.getElementById('item-day').value = item.day;
+                dayGroup?.classList.remove('hidden');
+                const daySelect = document.getElementById('item-day');
+                if (daySelect) {
+                    daySelect.value = item.day;
+                }
             } else {
-                dayGroup.classList.add('hidden');
+                dayGroup?.classList.add('hidden');
             }
         } else {
-            timeGroup.classList.add('hidden');
-            dayGroup.classList.add('hidden');
+            timeGroup?.classList.add('hidden');
+            dayGroup?.classList.add('hidden');
         }
     }
 
@@ -691,8 +707,15 @@ function editItem(type, id) {
         'bans': 'Редактировать запрет'
     };
     
-    document.getElementById('modal-title').textContent = titles[type] || 'Редактировать задачу';
+    const modalTitle = document.getElementById('modal-title');
+    if (modalTitle) {
+        modalTitle.textContent = titles[type] || 'Редактировать задачу';
+    }
     const modal = document.getElementById('modal');
+    if (!modal) {
+        console.error('[editItem] Модальное окно не найдено');
+        return;
+    }
     modal.classList.remove('hidden');
     modal.classList.add('flex');
 }
@@ -928,6 +951,15 @@ function initFullCalendar() {
                 if (eventText && info.event.textColor) {
                     eventText.style.setProperty('color', info.event.textColor, 'important');
                 }
+                
+                // Добавляем зачеркивание для выполненных событий
+                if (info.event.extendedProps.isCompleted || info.event.classNames.includes('fc-event-completed')) {
+                    if (eventText) {
+                        eventText.style.setProperty('text-decoration', 'line-through', 'important');
+                    }
+                    // Также зачеркиваем весь элемент события
+                    info.el.style.setProperty('text-decoration', 'line-through', 'important');
+                }
             }
         }
     });
@@ -1109,9 +1141,9 @@ function buildCalendarEvents() {
                 title: item.name,
                 start: `${dateKey}T${timePart}`,
                 allDay: !item.time,
-                backgroundColor: isCompleted ? '#6b7280' : ritualColor,
-                borderColor: isCompleted ? '#4b5563' : ritualColor,
-                textColor: isCompleted ? '#d1d5db' : '#ffffff',
+                backgroundColor: isCompleted ? '#5bb77d' : ritualColor,
+                borderColor: isCompleted ? '#5bb77d' : ritualColor,
+                textColor: isCompleted ? '#ffffff' : '#ffffff',
                 classNames: ['fc-event-daily', isCompleted ? 'fc-event-completed' : ''].filter(Boolean),
                 extendedProps: {
                     fullTitle: item.name,
@@ -1163,9 +1195,9 @@ function buildCalendarEvents() {
                 title: item.name,
                 start: `${dateKey}T${item.time || '00:00'}`,
                 allDay: !item.time,
-                backgroundColor: isCompleted ? '#6b7280' : weeklyColor,
-                borderColor: isCompleted ? '#4b5563' : weeklyColor,
-                textColor: isCompleted ? '#d1d5db' : '#ffffff',
+                backgroundColor: isCompleted ? '#5bb77d' : weeklyColor,
+                borderColor: isCompleted ? '#5bb77d' : weeklyColor,
+                textColor: isCompleted ? '#ffffff' : '#ffffff',
                 classNames: ['fc-event-weekly', isCompleted ? 'fc-event-completed' : ''].filter(Boolean),
                 extendedProps: {
                     fullTitle: item.name
@@ -1186,9 +1218,9 @@ function buildCalendarEvents() {
             title: item.name,
             start,
             allDay: !item.time,
-            backgroundColor: item.completed ? '#6b7280' : masterColor,
-            borderColor: item.completed ? '#4b5563' : masterColor,
-            textColor: item.completed ? '#d1d5db' : '#ffffff',
+            backgroundColor: item.completed ? '#5bb77d' : masterColor,
+            borderColor: item.completed ? '#5bb77d' : masterColor,
+            textColor: item.completed ? '#ffffff' : '#ffffff',
             classNames: ['fc-event-master', item.completed ? 'fc-event-completed' : ''].filter(Boolean),
             extendedProps: {
                 fullTitle: item.name
@@ -1233,8 +1265,8 @@ function renderList(type) {
             ? `<span>✅ Выполнено: ${formatDate(item.completedDate)}</span>`
             : '');
 
-        // Чекбоксы только для master и weekly, не для daily
-        const checkboxHtml = (isSimpleList || type === 'daily') ? '' : `
+        // Чекбоксы только для master, не для daily и weekly
+        const checkboxHtml = (isSimpleList || type === 'daily' || type === 'weekly') ? '' : `
             <input 
                 type="checkbox" 
                 class="item-checkbox" 
@@ -1258,7 +1290,7 @@ function renderList(type) {
             : '';
 
         return `
-            <div class="rounded-md-lg p-5 flex items-center gap-4 transition-all hover:-translate-y-0.5 ${completedClass ? 'opacity-70' : ''}" style="background-color: #E2E2E9; color: #573E5C; box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1); min-width: 0;" onmouseover="this.style.boxShadow='0 4px 6px -1px rgba(0, 0, 0, 0.15), 0 2px 4px -2px rgba(0, 0, 0, 0.1)';" onmouseout="this.style.boxShadow='0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1)';">
+            <div class="rounded-md-lg p-5 flex items-center gap-4 transition-all hover:-translate-y-0.5" style="background-color: #E2E2E9; color: #573E5C; box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1); min-width: 0;" onmouseover="this.style.boxShadow='0 4px 6px -1px rgba(0, 0, 0, 0.15), 0 2px 4px -2px rgba(0, 0, 0, 0.1)';" onmouseout="this.style.boxShadow='0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1)';">
                 ${checkboxHtml ? `<div class="flex-shrink-0">${checkboxHtml}</div>` : ''}
                 ${colorIndicator}
                 <div class="flex-1 min-w-0" ${item.description ? `data-description="${escapeHtml(item.description).replace(/"/g, '&quot;')}" onclick="if(!event.target.closest('.btn-icon')) { const desc = this.dataset.description; if(desc) showFullDescription(event, desc) }" style="cursor: pointer;"` : ''}>
@@ -1331,18 +1363,19 @@ function toggleTheme() {
 // Закрытие модального окна
 function closeModal() {
     const modal = document.getElementById('modal');
+    if (!modal) return;
     modal.classList.remove('flex');
     modal.classList.add('hidden');
     editingItemId = null;
 }
 
 // Закрытие модального окна при клике вне его
-window.onclick = function(event) {
+document.addEventListener('click', function(event) {
     const modal = document.getElementById('modal');
-    if (event.target === modal) {
+    if (modal && event.target === modal) {
         closeModal();
     }
-}
+});
 
 // Проверка напоминаний
 function checkReminders() {
