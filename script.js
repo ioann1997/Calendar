@@ -58,8 +58,8 @@ document.addEventListener('DOMContentLoaded', async () => {
             checkReminders();
             setupReminderCheck();
             
-            // Проверка напоминаний каждую минуту
-            setInterval(checkReminders, 60000);
+            // Локальная проверка напоминаний отключена - уведомления отправляются через Firebase Cloud Function
+            // setInterval(checkReminders, 60000); // Отключено для предотвращения дублирования уведомлений
         } else {
             // Если уведомления не включены в PWA, приложение заблокировано модальным окном
             console.log('[App] PWA заблокировано: уведомления не включены');
@@ -69,11 +69,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         setupTabs();
         setupForm();
         initFullCalendar();
-        checkReminders();
+        checkReminders(); // Проверяет только сброс еженедельных задач
         setupReminderCheck();
         
-        // Проверка напоминаний каждую минуту
-        setInterval(checkReminders, 60000);
+        // Локальная проверка напоминаний отключена - уведомления отправляются через Firebase Cloud Function
+        // setInterval(checkReminders, 60000); // Отключено для предотвращения дублирования
     }
 });
 
@@ -245,10 +245,15 @@ async function initializeFirebaseMessaging() {
         }
 
         // Обработка входящих сообщений (когда приложение открыто)
-        messaging.onMessage((payload) => {
-            console.log('[FCM] 📨 Получено push-сообщение:', payload);
-            showNotification(payload.notification?.body || payload.data?.body || 'Напоминание');
-        });
+        // ПРИМЕЧАНИЕ: Отключено для предотвращения дублирования уведомлений
+        // Push-уведомления уже показываются автоматически системой через firebase-messaging-sw.js
+        // Если включить onMessage, будет показываться два уведомления:
+        // 1. Системное push-уведомление (правильное, с иконкой)
+        // 2. Локальное уведомление от showNotification() (дубликат, с черным квадратом)
+        // messaging.onMessage((payload) => {
+        //     console.log('[FCM] 📨 Получено push-сообщение:', payload);
+        //     showNotification(payload.notification?.body || payload.data?.body || 'Напоминание');
+        // });
 
     } catch (error) {
         console.error('[FCM] ❌ Ошибка инициализации:', error);
@@ -1604,51 +1609,13 @@ document.addEventListener('click', function(event) {
 });
 
 // Проверка напоминаний
+// ПРИМЕЧАНИЕ: Локальная проверка отключена, так как уведомления отправляются через Firebase Cloud Function
+// Это предотвращает дублирование уведомлений (одно от локальной проверки, одно от FCM)
 function checkReminders() {
-    const now = new Date();
-    const currentTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
-    const currentDay = getCurrentDayName();
-
-    // Отладочное логирование
-    console.log(`[Reminders] Проверка локальных напоминаний: ${currentTime}, день: ${currentDay}`);
-    console.log(`[Reminders] Примечание: для push-уведомлений (когда приложение закрыто) используется Firebase Cloud Function`);
-
-    // Проверяем ежедневные ритуалы
-    items.daily.forEach(item => {
-        if (item.reminder && item.time && !item.completed) {
-            if (item.time === currentTime) {
-                console.log(`[Reminders] Сработало ежедневное напоминание: ${item.name} в ${item.time}`);
-                showNotification(`Ежедневный ритуал: ${item.name}`);
-            }
-        }
-    });
-
-    // Проверяем задачи от Господина
-    items.master.forEach(item => {
-        if (item.reminder && item.time && !item.completed) {
-            if (item.time === currentTime) {
-                console.log(`[Reminders] Сработало напоминание задачи: ${item.name} в ${item.time}`);
-                showNotification(`Задача от Господина: ${item.name}`);
-            }
-        }
-    });
-
-    // Проверяем еженедельные ритуалы
-    items.weekly.forEach(item => {
-        if (item.reminder && item.day && item.time && !item.completed) {
-            if (item.day === currentDay && item.time === currentTime) {
-                console.log(`[Reminders] Сработало еженедельное напоминание: ${item.name} в ${item.day} ${item.time}`);
-                showNotification(`Еженедельный ритуал: ${item.name}`);
-            } else {
-                // Отладочное логирование для еженедельных
-                if (item.day === currentDay) {
-                    console.log(`[Reminders] Еженедельное напоминание "${item.name}": день совпадает (${currentDay}), но время не совпадает (ожидается ${item.time}, сейчас ${currentTime})`);
-                }
-            }
-        }
-    });
-
-    // Проверяем сброс еженедельных задач
+    // Локальная проверка отключена - уведомления отправляются только через Firebase Cloud Function
+    // Это предотвращает дублирование уведомлений
+    
+    // Проверяем только сброс еженедельных задач (это не связано с уведомлениями)
     checkWeeklyReset();
 }
 
@@ -1750,15 +1717,8 @@ async function showNotification(message, title = 'Напоминание') {
             if ('serviceWorker' in navigator && serviceWorkerRegistration) {
                 console.log('[Notification] Используем Service Worker для показа уведомления');
                 
-                // Вибрация через Vibration API (для Android)
-                if ('vibrate' in navigator) {
-                    try {
-                        navigator.vibrate([200, 100, 200]);
-                        console.log('[Notification] Вибрация активирована');
-                    } catch (e) {
-                        console.warn('[Notification] Ошибка вибрации:', e);
-                    }
-                }
+                // Вибрация указана в опциях уведомления (vibrate: [200, 100, 200])
+                // Не вызываем navigator.vibrate напрямую, так как браузер блокирует это до взаимодействия пользователя
                 
                 await serviceWorkerRegistration.showNotification(title, {
                     body: message,
@@ -1777,15 +1737,8 @@ async function showNotification(message, title = 'Напоминание') {
                 // Fallback: используем обычный Notification API
                 console.log('[Notification] Используем Notification API');
                 
-                // Вибрация через Vibration API (для Android)
-                if ('vibrate' in navigator) {
-                    try {
-                        navigator.vibrate([200, 100, 200]);
-                        console.log('[Notification] Вибрация активирована');
-                    } catch (e) {
-                        console.warn('[Notification] Ошибка вибрации:', e);
-                    }
-                }
+                // Вибрация указана в опциях уведомления (vibrate: [200, 100, 200])
+                // Не вызываем navigator.vibrate напрямую, так как браузер блокирует это до взаимодействия пользователя
                 
                 const notification = new Notification(title, {
                     body: message,

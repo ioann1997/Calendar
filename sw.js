@@ -1,7 +1,7 @@
 // Service Worker для PWA и Firebase Cloud Messaging
 // Версия кэша - обновляй при изменении файлов
-const CACHE_NAME = 'sovinaya-napominalka-v3';
-const RUNTIME_CACHE = 'runtime-cache-v2';
+const CACHE_NAME = 'sovinaya-napominalka-v4';
+const RUNTIME_CACHE = 'runtime-cache-v3';
 
 // Определяем базовый путь автоматически (для GitHub Pages)
 // Если sw.js находится в /calendar/sw.js, то BASE_PATH будет /calendar
