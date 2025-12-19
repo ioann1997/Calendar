@@ -43,41 +43,19 @@ document.addEventListener('DOMContentLoaded', async () => {
     console.log('[PWA] Window dimensions:', window.innerWidth, 'x', window.innerHeight);
     console.log('[PWA] Screen dimensions:', window.screen.width, 'x', window.screen.height);
     
-    // Проверяем уведомления ПЕРЕД полной инициализацией приложения
-    // Если уведомления не включены, приложение будет заблокировано модальным окном
-    checkAndShowNotificationsModal();
-    
-    // Проверяем, установлено ли приложение как PWA
-    const isPWA = isPWAInstalled();
-    
     // Инициализируем приложение
-    // Для PWA: только если уведомления включены
-    // Для обычного браузера: всегда
-    if (isPWA) {
-        // Для PWA уведомления обязательны
-        if ('Notification' in window && Notification.permission === 'granted') {
             setupTabs();
             setupForm();
             initFullCalendar();
             checkReminders();
             setupReminderCheck();
             
-            // Запускаем умную проверку напоминаний (работает как fallback, если FCM не работает)
-            startSmartReminderCheck();
-        } else {
-            // Если уведомления не включены в PWA, приложение заблокировано модальным окном
-            console.log('[App] PWA заблокировано: уведомления не включены');
-        }
-    } else {
-        // Для обычного браузера инициализируем приложение всегда
-        setupTabs();
-        setupForm();
-        initFullCalendar();
-        checkReminders(); // Проверяет только сброс еженедельных задач
-        setupReminderCheck();
-        
-        // Запускаем умную проверку напоминаний (работает как fallback, если FCM не работает)
-        startSmartReminderCheck();
+    // Запускаем умную проверку напоминаний (работает как fallback, если FCM не работает)
+    startSmartReminderCheck();
+    
+    // Инициализируем FCM, если разрешение уже дано
+    if ('Notification' in window && Notification.permission === 'granted' && calendarId) {
+        initializeFirebaseMessaging();
     }
 });
 
@@ -309,6 +287,87 @@ async function initializeFirebaseMessaging() {
     }
 }
 
+// Сбор информации об устройстве
+function getDeviceInfo() {
+    const isPWA = isPWAInstalled();
+    const userAgent = navigator.userAgent;
+    
+    // Определяем модель устройства из User Agent
+    let deviceModel = 'Неизвестно';
+    let deviceBrand = 'Неизвестно';
+    
+    // Парсинг User Agent для определения устройства
+    if (/iPhone|iPad|iPod/.test(userAgent)) {
+        deviceBrand = 'Apple';
+        if (/iPhone/.test(userAgent)) {
+            const match = userAgent.match(/iPhone\s*OS\s*(\d+)_(\d+)/);
+            if (match) {
+                deviceModel = `iPhone (iOS ${match[1]}.${match[2]})`;
+            } else {
+                deviceModel = 'iPhone';
+            }
+        } else if (/iPad/.test(userAgent)) {
+            deviceModel = 'iPad';
+        }
+    } else if (/Android/.test(userAgent)) {
+        deviceBrand = 'Android';
+        const match = userAgent.match(/Android\s+([^;]+)/);
+        if (match) {
+            deviceModel = match[1].trim();
+        }
+        // Пытаемся определить модель из User Agent
+        const modelMatch = userAgent.match(/(?:SM-|Pixel|OnePlus|Xiaomi|Samsung|Huawei|Honor)[\w-]+/i);
+        if (modelMatch) {
+            deviceModel = modelMatch[0];
+        }
+    } else if (/Windows/.test(userAgent)) {
+        deviceBrand = 'Windows';
+        deviceModel = 'Windows Device';
+    } else if (/Mac/.test(userAgent)) {
+        deviceBrand = 'Apple';
+        deviceModel = 'Mac';
+    } else if (/Linux/.test(userAgent)) {
+        deviceBrand = 'Linux';
+        deviceModel = 'Linux Device';
+    }
+    
+    // Размер экрана
+    const screenWidth = window.screen.width;
+    const screenHeight = window.screen.height;
+    const screenSize = `${screenWidth}x${screenHeight}`;
+    
+    // Размер окна
+    const windowWidth = window.innerWidth;
+    const windowHeight = window.innerHeight;
+    const windowSize = `${windowWidth}x${windowHeight}`;
+    
+    // Браузер
+    let browser = 'Неизвестно';
+    if (userAgent.includes('Chrome') && !userAgent.includes('Edg')) {
+        browser = 'Chrome';
+    } else if (userAgent.includes('Firefox')) {
+        browser = 'Firefox';
+    } else if (userAgent.includes('Safari') && !userAgent.includes('Chrome')) {
+        browser = 'Safari';
+    } else if (userAgent.includes('Edg')) {
+        browser = 'Edge';
+    }
+    
+    return {
+        token: null, // Будет установлен позже
+        isPWA: isPWA,
+        deviceModel: deviceModel,
+        deviceBrand: deviceBrand,
+        screenSize: screenSize,
+        windowSize: windowSize,
+        browser: browser,
+        userAgent: userAgent,
+        calendarId: calendarId,
+        registeredAt: firebase.firestore.FieldValue.serverTimestamp(),
+        lastSeen: firebase.firestore.FieldValue.serverTimestamp()
+    };
+}
+
 // Сохранение FCM токена в Firebase с механизмом повторных попыток
 async function saveFCMToken(token, isInitialAttempt = false) {
     if (!calendarId) {
@@ -330,54 +389,112 @@ async function saveFCMToken(token, isInitialAttempt = false) {
             return false;
         }
         
-        const currentTokens = calendarDoc.data()?.fcmTokens || [];
-        console.log(`[FCM] Текущие токены в Firebase: ${currentTokens.length}`);
+        // Получаем текущие устройства (новая структура) или токены (старая структура для обратной совместимости)
+        const currentDevices = calendarDoc.data()?.devices || [];
+        const currentTokens = calendarDoc.data()?.fcmTokens || []; // Старая структура для обратной совместимости
+        
+        console.log(`[FCM] Текущие устройства в Firebase: ${currentDevices.length}`);
+        console.log(`[FCM] Старые токены (для миграции): ${currentTokens.length}`);
         
         // Проверяем, установлено ли приложение как PWA
         const isPWA = isPWAInstalled();
         console.log(`[FCM] Режим: ${isPWA ? 'PWA (установленное приложение)' : 'Браузер (веб-сайт)'}`);
         
+        // Собираем информацию об устройстве
+        const deviceInfo = getDeviceInfo();
+        deviceInfo.token = token;
+        
         // Получаем старый токен этого устройства из localStorage
         const oldToken = localStorage.getItem('fcmToken');
         
-        // Если это PWA, удаляем все токены браузера (старые токены)
-        // Если это браузер, удаляем только старый токен этого устройства
-        let updatedTokens;
+        // Обновляем массив устройств
+        let updatedDevices;
         if (isPWA) {
-            // Для PWA: удаляем все токены, кроме текущего
-            // Это предотвращает дублирование между браузером и PWA на одном устройстве
-            updatedTokens = [token]; // Оставляем только текущий токен PWA
-            console.log('[FCM] PWA режим: оставляем только токен PWA, удаляем все остальные (включая токены браузера)');
+            // Для PWA: проверяем, есть ли уже устройство с таким токеном
+            const existingPWAIndex = currentDevices.findIndex(d => d.token === token);
+            if (existingPWAIndex >= 0) {
+                // Обновляем существующее PWA устройство
+                const existingPWA = currentDevices[existingPWAIndex];
+                updatedDevices = [{
+                    ...deviceInfo,
+                    registeredAt: existingPWA.registeredAt || deviceInfo.registeredAt,
+                    lastSeen: firebase.firestore.FieldValue.serverTimestamp()
+                }];
+                console.log('[FCM] PWA устройство обновлено (lastSeen)');
         } else {
-            // Для браузера: удаляем старый токен этого устройства
-            updatedTokens = currentTokens.filter(t => t !== oldToken && t !== token);
+                // Новое PWA устройство
+                updatedDevices = [deviceInfo];
+                console.log('[FCM] Новое PWA устройство добавлено');
+            }
+            // Удаляем все остальные устройства (браузерные)
+            console.log('[FCM] PWA режим: оставляем только PWA устройство, удаляем все остальные');
+        } else {
+            // Для браузера: удаляем старое устройство этого браузера
+            updatedDevices = currentDevices.filter(d => {
+                // Удаляем устройство с старым токеном или текущим токеном (будет обновлено)
+                return d.token !== oldToken && d.token !== token;
+            });
             
-            // Добавляем новый токен (если его еще нет)
-            if (!updatedTokens.includes(token)) {
-                updatedTokens.push(token);
-                console.log('[FCM] Новый токен браузера добавлен в список');
+            // Проверяем, есть ли уже устройство с таким токеном
+            const existingDeviceIndex = updatedDevices.findIndex(d => d.token === token);
+            if (existingDeviceIndex >= 0) {
+                // Обновляем существующее устройство (сохраняем дату регистрации, обновляем lastSeen)
+                updatedDevices[existingDeviceIndex] = {
+                    ...deviceInfo,
+                    registeredAt: updatedDevices[existingDeviceIndex].registeredAt || deviceInfo.registeredAt,
+                    lastSeen: firebase.firestore.FieldValue.serverTimestamp()
+                };
+                console.log('[FCM] Устройство браузера обновлено (lastSeen)');
             } else {
-                console.log('[FCM] Токен браузера уже существует в списке');
+                // Добавляем новое устройство
+                updatedDevices.push(deviceInfo);
+                console.log('[FCM] Новое устройство браузера добавлено');
             }
             
-            // Ограничиваем количество токенов (максимум 2 - один для браузера, один для PWA)
-            if (updatedTokens.length > 2) {
-                updatedTokens = updatedTokens.slice(-2);
-                console.log(`[FCM] Ограничение: оставлено только последние 2 токена`);
+            // Ограничиваем количество устройств (максимум 5)
+            if (updatedDevices.length > 5) {
+                // Оставляем последние 5 устройств (самые новые)
+                updatedDevices = updatedDevices.slice(-5);
+                console.log(`[FCM] Ограничение: оставлено только последние 5 устройств`);
+            }
+        }
+        
+        // Миграция: конвертируем старые токены в новую структуру устройств (если есть)
+        if (currentTokens.length > 0 && currentDevices.length === 0) {
+            console.log('[FCM] Миграция: конвертируем старые токены в новую структуру устройств');
+            for (const oldTokenValue of currentTokens) {
+                if (!updatedDevices.find(d => d.token === oldTokenValue)) {
+                    const migratedDevice = {
+                        token: oldTokenValue,
+                        isPWA: false,
+                        deviceModel: 'Неизвестно (миграция)',
+                        deviceBrand: 'Неизвестно',
+                        screenSize: 'Неизвестно',
+                        windowSize: 'Неизвестно',
+                        browser: 'Неизвестно',
+                        userAgent: 'Миграция со старой версии',
+                        calendarId: calendarId,
+                        registeredAt: firebase.firestore.FieldValue.serverTimestamp(),
+                        lastSeen: firebase.firestore.FieldValue.serverTimestamp()
+                    };
+                    updatedDevices.push(migratedDevice);
+                }
             }
         }
         
         // Логируем для диагностики
-        if (updatedTokens.length > 1) {
-            console.log(`[FCM] ⚠️ Внимание: найдено ${updatedTokens.length} токенов.`);
+        if (updatedDevices.length > 1) {
+            console.log(`[FCM] ⚠️ Внимание: найдено ${updatedDevices.length} устройств.`);
             if (isPWA) {
                 console.log(`[FCM] 💡 Рекомендуется закрыть сайт в браузере, чтобы избежать дублирования уведомлений.`);
             }
         }
         
-        // Сохраняем обновленный массив токенов
+        // Сохраняем обновленный массив устройств и токенов (для обратной совместимости)
+        const updatedTokens = updatedDevices.map(d => d.token);
         await calendarRef.update({
-            fcmTokens: updatedTokens,
+            devices: updatedDevices,
+            fcmTokens: updatedTokens, // Сохраняем для обратной совместимости с Cloud Function
             lastTokenUpdate: firebase.firestore.FieldValue.serverTimestamp()
         });
         
@@ -762,6 +879,11 @@ function switchTab(tabId) {
     });
     
     currentTab = tabId;
+    
+    // Если переключились на вкладку устройств, загружаем список
+    if (tabId === 'devices') {
+        loadDevicesList();
+    }
 }
 
 // Настройка вкладок
@@ -1701,136 +1823,6 @@ function isPWAInstalled() {
 }
 
 // Проверка и показ модального окна для уведомлений
-function checkAndShowNotificationsModal() {
-    // Проверяем, установлено ли приложение как PWA
-    const isPWA = isPWAInstalled();
-    console.log('[Notifications] PWA установлено:', isPWA);
-    
-    // Если приложение не установлено как PWA, уведомления не обязательны
-    if (!isPWA) {
-        console.log('[Notifications] Приложение не установлено как PWA, уведомления не обязательны');
-        // Инициализируем FCM, если разрешение уже дано (но не требуем его)
-        if ('Notification' in window && Notification.permission === 'granted' && calendarId) {
-            initializeFirebaseMessaging();
-        }
-        return;
-    }
-    
-    // Для PWA уведомления обязательны
-    if (!('Notification' in window)) {
-        console.warn('[Notifications] Браузер не поддерживает уведомления');
-        // Если уведомления не поддерживаются, все равно показываем модальное окно с предупреждением
-        showNotificationsModal();
-        return;
-    }
-    
-    const permission = Notification.permission;
-    console.log('[Notifications] Текущее разрешение:', permission);
-    
-    if (permission !== 'granted') {
-        // Показываем модальное окно, если уведомления не включены (только для PWA)
-        showNotificationsModal();
-    } else {
-        // Уведомления уже включены - инициализируем FCM
-        if (calendarId) {
-            initializeFirebaseMessaging();
-        } else {
-            setTimeout(() => {
-                if (calendarId) {
-                    initializeFirebaseMessaging();
-                }
-            }, 1000);
-        }
-    }
-}
-
-// Показать модальное окно для уведомлений
-function showNotificationsModal() {
-    const modal = document.getElementById('notifications-required-modal');
-    if (modal) {
-        modal.classList.remove('hidden');
-        modal.classList.add('flex');
-        // Блокируем прокрутку страницы
-        document.body.style.overflow = 'hidden';
-    }
-}
-
-// Скрыть модальное окно для уведомлений
-function hideNotificationsModal() {
-    const modal = document.getElementById('notifications-required-modal');
-    if (modal) {
-        modal.classList.add('hidden');
-        modal.classList.remove('flex');
-        // Разблокируем прокрутку страницы
-        document.body.style.overflow = '';
-    }
-}
-
-// Запрос разрешения на уведомления (вызывается из модального окна)
-async function requestNotificationsPermission() {
-    if (!('Notification' in window)) {
-        alert('Ваш браузер не поддерживает уведомления. Пожалуйста, используйте современный браузер (Chrome, Firefox, Safari, Edge).');
-        return;
-    }
-    
-    const permission = Notification.permission;
-    
-    if (permission === 'granted') {
-        // Уведомления уже включены
-        hideNotificationsModal();
-        if (calendarId) {
-            await initializeFirebaseMessaging();
-        }
-        return;
-    }
-    
-    if (permission === 'denied') {
-        // Уведомления заблокированы - показываем инструкцию
-        alert('Уведомления заблокированы в настройках браузера.\n\nДля включения:\n\nChrome/Edge (Android):\nНастройки → Уведомления → Разрешения сайтов → Найдите этот сайт → Разрешить\n\nSafari (iOS):\nНастройки → Safari → Уведомления → Найдите этот сайт → Разрешить\n\nFirefox:\nНастройки → Приватность → Разрешения → Уведомления → Найдите этот сайт → Разрешить\n\nПосле включения обновите страницу.');
-        return;
-    }
-    
-    // Запрашиваем разрешение
-    try {
-        const result = await Notification.requestPermission();
-        console.log('[Notifications] Результат запроса разрешения:', result);
-        
-        if (result === 'granted') {
-            console.log('[Notifications] ✅ Разрешение получено');
-            hideNotificationsModal();
-            
-            // Инициализируем приложение после получения разрешения
-            if (!isInitialized) {
-                setupTabs();
-                setupForm();
-                initFullCalendar();
-                checkReminders();
-                setupReminderCheck();
-                isInitialized = true;
-            }
-            
-            // Инициализируем FCM после получения разрешения
-            if (calendarId) {
-                await initializeFirebaseMessaging();
-            } else {
-                // Если calendarId еще не установлен, ждем
-                setTimeout(async () => {
-                    if (calendarId) {
-                        await initializeFirebaseMessaging();
-                    }
-                }, 1000);
-            }
-        } else {
-            console.log('[Notifications] ❌ Разрешение отклонено:', result);
-            // Модальное окно остается открытым, пользователь не может использовать приложение
-            alert('Уведомления необходимы для работы приложения. Пожалуйста, разрешите уведомления, чтобы продолжить.');
-        }
-    } catch (error) {
-        console.error('[Notifications] Ошибка запроса разрешения:', error);
-        alert('Ошибка при запросе разрешения на уведомления: ' + error.message);
-    }
-}
-
 // Переключение темы
 function toggleTheme() {
     const html = document.documentElement;
@@ -1884,10 +1876,10 @@ function getRandomReminderMessage(ritualName) {
     return messages[randomIndex];
 }
 
-// Функция для генерации случайного ежедневного сообщения в 11:00 (совпадает с functions/index.js)
+// Функция для генерации случайного ежедневного сообщения в 11:25 (совпадает с functions/index.js)
 function getDaily11AMMessage() {
     const messages = [
-        "11:00 — время перерыва и моей гордости за тебя. Ты сегодня справляешься великолепно!",
+        "11:25 — время перерыва и моей гордости за тебя. Ты сегодня справляешься великолепно!",
         "Середина дня, середина моих мыслей о тебе. Помни, как ты важна для меня",
         "11 часов, и я хочу напомнить: твоя улыбка — самый ценный бриллиант в моей коллекции",
         "Послеобеденное солнце светит не так ярко, как ты. Продолжай сиять",
@@ -1979,16 +1971,16 @@ function checkLocalReminders() {
     const currentTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
     const currentDay = getCurrentDayName();
     
-    // Ежедневное уведомление в 11:00 (только для PWA в fallback режиме)
-    if (currentTime === '11:00') {
-        // Проверяем, не отправляли ли уже сегодня уведомление в 11:00
+    // Ежедневное уведомление в 11:25 (только для PWA в fallback режиме)
+    if (currentTime === '11:25') {
+        // Проверяем, не отправляли ли уже сегодня уведомление в 11:25
         const last11AMNotification = localStorage.getItem('last11AMNotification');
         const today = new Date().toDateString();
         
         if (!last11AMNotification || last11AMNotification !== today) {
             const message = getDaily11AMMessage();
             showNotification(message, '💝 Твоё напоминание');
-            console.log('[Reminders] 💝 Ежедневное уведомление 11:00 (fallback)');
+            console.log('[Reminders] 💝 Ежедневное уведомление 11:25 (fallback)');
             localStorage.setItem('last11AMNotification', today);
         }
     }
@@ -2190,4 +2182,142 @@ function escapeHtml(text) {
     const div = document.createElement('div');
     div.textContent = text;
     return div.innerHTML;
+}
+
+// Загрузка и отображение списка устройств
+async function loadDevicesList() {
+    if (!calendarId) {
+        const devicesList = document.getElementById('devices-list');
+        if (devicesList) {
+            devicesList.innerHTML = '<p class="text-center text-gray-500">Календарь не инициализирован</p>';
+        }
+        return;
+    }
+    
+    try {
+        const calendarRef = db.collection('calendars').doc(calendarId);
+        const calendarDoc = await calendarRef.get();
+        
+        if (!calendarDoc.exists) {
+            const devicesList = document.getElementById('devices-list');
+            if (devicesList) {
+                devicesList.innerHTML = '<p class="text-center text-gray-500">Календарь не найден</p>';
+            }
+            return;
+        }
+        
+        const devices = calendarDoc.data()?.devices || [];
+        renderDevicesList(devices);
+    } catch (error) {
+        console.error('[Devices] Ошибка загрузки устройств:', error);
+        const devicesList = document.getElementById('devices-list');
+        if (devicesList) {
+            devicesList.innerHTML = '<p class="text-center text-red-500">Ошибка загрузки устройств</p>';
+        }
+    }
+}
+
+// Отображение списка устройств
+function renderDevicesList(devices) {
+    const devicesList = document.getElementById('devices-list');
+    if (!devicesList) return;
+    
+    if (devices.length === 0) {
+        devicesList.innerHTML = '<p class="text-center text-gray-500">Нет зарегистрированных устройств</p>';
+        return;
+    }
+    
+    // Сортируем устройства: сначала PWA, потом по дате регистрации
+    const sortedDevices = [...devices].sort((a, b) => {
+        if (a.isPWA && !b.isPWA) return -1;
+        if (!a.isPWA && b.isPWA) return 1;
+        const aDate = a.registeredAt?.toDate ? a.registeredAt.toDate() : new Date(a.registeredAt);
+        const bDate = b.registeredAt?.toDate ? b.registeredAt.toDate() : new Date(b.registeredAt);
+        return bDate - aDate;
+    });
+    
+    devicesList.innerHTML = sortedDevices.map((device, index) => {
+        const registeredDate = device.registeredAt?.toDate ? device.registeredAt.toDate() : new Date(device.registeredAt);
+        const lastSeenDate = device.lastSeen?.toDate ? device.lastSeen.toDate() : new Date(device.lastSeen);
+        
+        const formatDate = (date) => {
+            if (!date || isNaN(date.getTime())) return 'Неизвестно';
+            return date.toLocaleString('ru-RU', {
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        };
+        
+        const tokenPreview = device.token ? device.token.substring(0, 20) + '...' : 'Нет токена';
+        const isCurrentDevice = device.token === fcmToken;
+        
+        return `
+            <div class="p-4 rounded-lg border" style="background-color: var(--md-surface); border-color: var(--md-outline-variant); ${isCurrentDevice ? 'border: 2px solid var(--md-primary);' : ''}">
+                <div class="flex justify-between items-start mb-3">
+                    <div class="flex items-center gap-2">
+                        <span class="text-2xl">${device.isPWA ? '📱' : '💻'}</span>
+                        <div>
+                            <h3 class="font-semibold" style="color: var(--md-on-surface);">
+                                ${escapeHtml(device.deviceModel || 'Неизвестно')}
+                                ${isCurrentDevice ? '<span class="text-xs ml-2 px-2 py-1 rounded" style="background-color: var(--md-primary-container); color: var(--md-on-primary-container);">Текущее</span>' : ''}
+                            </h3>
+                            <p class="text-sm text-gray-500">${escapeHtml(device.deviceBrand || 'Неизвестно')}</p>
+                        </div>
+                    </div>
+                    <span class="text-xs px-2 py-1 rounded" style="background-color: ${device.isPWA ? '#d6e3ff' : '#f0f0f0'}; color: var(--md-primary);">
+                        ${device.isPWA ? 'PWA' : 'Браузер'}
+                    </span>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                    <div>
+                        <span class="text-gray-500">Экран:</span>
+                        <span class="ml-2" style="color: var(--md-on-surface);">${escapeHtml(device.screenSize || 'Неизвестно')}</span>
+                    </div>
+                    <div>
+                        <span class="text-gray-500">Окно:</span>
+                        <span class="ml-2" style="color: var(--md-on-surface);">${escapeHtml(device.windowSize || 'Неизвестно')}</span>
+                    </div>
+                    <div>
+                        <span class="text-gray-500">Браузер:</span>
+                        <span class="ml-2" style="color: var(--md-on-surface);">${escapeHtml(device.browser || 'Неизвестно')}</span>
+                    </div>
+                    <div>
+                        <span class="text-gray-500">ID календаря:</span>
+                        <span class="ml-2 font-mono text-xs" style="color: var(--md-on-surface);">${escapeHtml(device.calendarId || calendarId || 'Неизвестно')}</span>
+                    </div>
+                    <div>
+                        <span class="text-gray-500">Зарегистрировано:</span>
+                        <span class="ml-2" style="color: var(--md-on-surface);">${formatDate(registeredDate)}</span>
+                    </div>
+                    <div>
+                        <span class="text-gray-500">Последний раз:</span>
+                        <span class="ml-2" style="color: var(--md-on-surface);">${formatDate(lastSeenDate)}</span>
+                    </div>
+                </div>
+                
+                <div class="mt-3 pt-3 border-t" style="border-color: var(--md-outline-variant);">
+                    <div class="text-xs">
+                        <span class="text-gray-500">Токен:</span>
+                        <span class="ml-2 font-mono text-xs break-all" style="color: var(--md-on-surface);">${escapeHtml(tokenPreview)}</span>
+                    </div>
+                </div>
+                
+                ${device.userAgent ? `
+                    <details class="mt-2">
+                        <summary class="text-xs text-gray-500 cursor-pointer">User Agent</summary>
+                        <p class="text-xs font-mono mt-1 break-all" style="color: var(--md-on-surface);">${escapeHtml(device.userAgent)}</p>
+                    </details>
+                ` : ''}
+            </div>
+        `;
+    }).join('');
+}
+
+// Обновление списка устройств
+function refreshDevicesList() {
+    loadDevicesList();
 }

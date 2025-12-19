@@ -481,6 +481,8 @@
   .fc .fc-button {
     font-family: 'Roboto', sans-serif;
     font-weight: 500;
+    margin: 0.25rem !important;
+    padding: 0.5rem 1rem !important;
   }
   
   /* События календаря */
@@ -509,12 +511,25 @@
   .fc-theme-standard .fc-scrollgrid {
     background-color: var(--md-container);
     @apply rounded-md-lg;
+    margin-top: 0.5rem !important;
   }
   
   .fc .fc-toolbar-title {
     font-family: 'Roboto', sans-serif;
     font-weight: 400;
     color: var(--md-on-surface);
+  }
+  
+  /* Отступы для toolbar календаря */
+  .fc .fc-toolbar {
+    padding: 0.5rem 0 !important;
+    margin-bottom: 0.5rem !important;
+  }
+  
+  /* Отступы для кнопок переключения вида */
+  .fc .fc-button-group .fc-button {
+    margin: 0.25rem !important;
+    padding: 0.5rem 1rem !important;
   }
   
   .fc .fc-col-header-cell-cushion {
@@ -562,22 +577,6 @@
     }
   }
   
-  /* Модальное окно для уведомлений */
-  #notifications-required-modal {
-    animation: fadeIn 0.3s ease-in-out;
-    pointer-events: auto;
-  }
-  
-  #notifications-required-modal > div {
-    animation: slideUp 0.3s ease-out;
-  }
-  
-  /* Блокируем весь интерфейс, когда модальное окно открыто */
-  body:has(#notifications-required-modal:not(.hidden)) > div > *:not(#notifications-required-modal) {
-    pointer-events: none;
-    opacity: 0.5;
-    filter: blur(2px);
-  }
   
   @keyframes fadeIn {
     from {
@@ -642,6 +641,8 @@
     border-color: var(--md-primary-container) !important;
     color: var(--md-primary) !important;
     border-radius: 12px !important;
+    margin: 0.25rem !important;
+    padding: 0.5rem 0.75rem !important;
   }
   
   .fc .fc-button-prev:hover,
@@ -667,6 +668,7 @@
     color: #FFFFFF !important;
     border-radius: 20px !important;
     padding: 0.5rem 1rem !important;
+    margin: 0.25rem !important;
   }
   
   .fc .fc-today-button:hover,
