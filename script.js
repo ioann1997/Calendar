@@ -50,6 +50,9 @@ document.addEventListener('DOMContentLoaded', async () => {
             checkReminders();
             setupReminderCheck();
             
+            // Инициализируем шкалу прогресса
+            updateProgressHeart();
+            
     // Запускаем умную проверку напоминаний (работает как fallback, если FCM не работает)
     startSmartReminderCheck();
     
@@ -1166,6 +1169,10 @@ function saveItem() {
 
     saveData();
     renderAll();
+    
+    // Обновляем шкалу прогресса
+    updateProgressHeart();
+    
     closeModal();
 }
 
@@ -1201,6 +1208,412 @@ function toggleComplete(type, id) {
 
     saveData();
     renderAll();
+    
+    // Обновляем шкалу прогресса
+    updateProgressHeart();
+    
+    // Проверяем, все ли задачи за день выполнены
+    checkAllTasksCompleted();
+}
+
+// Проверка выполнения всех задач за день
+function checkAllTasksCompleted() {
+    const today = getLocalDateString();
+    const currentDay = getCurrentDayName();
+    
+    // Проверяем ежедневные ритуалы (только активные)
+    const dailyTasks = (items.daily || []).filter(item => item.is_active !== false);
+    const allDailyCompleted = dailyTasks.length === 0 || dailyTasks.every(item => {
+        // Проверяем массив выполненных дат (новый формат)
+        if (item.completedDates && Array.isArray(item.completedDates)) {
+            return item.completedDates.includes(today);
+        }
+        // Проверяем старый формат completedDate
+        if (item.completedDate) {
+            // completedDate может быть в формате "YYYY-MM-DD" или "YYYY-MM-DDTHH:mm:ss.sssZ"
+            const completedDate = item.completedDate.includes('T') 
+                ? item.completedDate.split('T')[0] 
+                : item.completedDate;
+            return completedDate === today;
+        }
+        // Проверяем флаг completed для обратной совместимости
+        return item.completed === true;
+    });
+    
+    // Проверяем задачи от господина (только те, которые относятся к сегодняшнему дню)
+    const allMasterTasks = items.master || [];
+    // Фильтруем только задачи, которые созданы на сегодня или должны быть выполнены сегодня
+    const masterTasks = allMasterTasks.filter(item => {
+        if (!item.createdDate) return false;
+        // Проверяем, что задача создана на сегодняшний день
+        const createdDate = item.createdDate.split('T')[0];
+        return createdDate === today;
+    });
+    
+    // Проверяем, что все задачи от господина на сегодня выполнены
+    const allMasterCompleted = masterTasks.length === 0 || masterTasks.every(item => {
+        // Проверяем, что задача выполнена и дата выполнения соответствует сегодня
+        if (!item.completed) return false;
+        if (item.completedDate) {
+            const completedDate = item.completedDate.split('T')[0];
+            return completedDate === today;
+        }
+        // Если completedDate нет, но completed === true, считаем выполненной (для обратной совместимости)
+        return item.completed === true;
+    });
+    
+    // Проверяем еженедельные ритуалы (только для текущего дня недели)
+    const weeklyTasks = (items.weekly || []).filter(item => item.day === currentDay);
+    const allWeeklyCompleted = weeklyTasks.length === 0 || weeklyTasks.every(item => {
+        if (item.completedDates && Array.isArray(item.completedDates)) {
+            return item.completedDates.includes(today);
+        }
+        return item.completed === true;
+    });
+    
+    // Логирование для диагностики
+    const shouldShow = allDailyCompleted && allMasterCompleted && allWeeklyCompleted && 
+                      (dailyTasks.length > 0 || masterTasks.length > 0 || weeklyTasks.length > 0);
+    
+    console.log('[Congratulations] Проверка выполнения задач:', {
+        today,
+        currentDay,
+        dailyTasks: {
+            count: dailyTasks.length,
+            allCompleted: allDailyCompleted,
+            items: dailyTasks.map(t => ({ id: t.id, name: t.name, completed: t.completed, completedDate: t.completedDate, completedDates: t.completedDates }))
+        },
+        masterTasks: {
+            count: masterTasks.length,
+            allCompleted: allMasterCompleted,
+            items: masterTasks.map(t => ({ 
+                id: t.id, 
+                name: t.name, 
+                completed: t.completed, 
+                createdDate: t.createdDate,
+                completedDate: t.completedDate 
+            }))
+        },
+        weeklyTasks: {
+            count: weeklyTasks.length,
+            allCompleted: allWeeklyCompleted,
+            items: weeklyTasks.map(t => ({ id: t.id, name: t.name, completed: t.completed, completedDates: t.completedDates, day: t.day }))
+        },
+        shouldShow
+    });
+    
+    // Если все задачи выполнены и есть хотя бы одна задача, показываем поздравление
+    if (shouldShow) {
+        console.log('[Congratulations] ✅ Все задачи выполнены! Показываем поздравление...');
+        showCongratulations();
+    } else {
+        console.log('[Congratulations] ❌ Условия не выполнены. Причины:', {
+            allDailyCompleted,
+            allMasterCompleted,
+            allWeeklyCompleted,
+            hasTasks: (dailyTasks.length > 0 || masterTasks.length > 0 || weeklyTasks.length > 0)
+        });
+    }
+}
+
+// Расчет и обновление шкалы прогресса в виде сердца
+function updateProgressHeart(targetDate = null) {
+    // Если дата не указана, используем текущую дату или дату из календаря
+    let targetDateObj;
+    if (targetDate) {
+        targetDateObj = new Date(targetDate);
+    } else if (calendar && calendar.view && calendar.view.type === 'dayGridDay') {
+        // Если календарь в режиме дня, используем текущую дату календаря
+        targetDateObj = calendar.view.currentStart;
+    } else {
+        // По умолчанию используем сегодня
+        targetDateObj = new Date();
+    }
+    
+    const targetDateString = getLocalDateString(targetDateObj);
+    const targetDay = getDayNameFromDate(targetDateObj);
+    
+    // Проверяем, в каком режиме календарь
+    const isDayView = calendar && calendar.view && calendar.view.type === 'dayGridDay';
+    
+    // Показываем/скрываем сердце в зависимости от режима
+    const heartContainer = document.getElementById('progress-heart-container');
+    if (heartContainer) {
+        if (isDayView) {
+            heartContainer.style.display = 'flex';
+        } else {
+            heartContainer.style.display = 'none';
+            return; // Не обновляем, если не в режиме дня
+        }
+    }
+    
+    const today = targetDateString;
+    const currentDay = targetDay;
+    
+    // Подсчитываем все задачи на сегодня
+    const dailyTasks = (items.daily || []).filter(item => item.is_active !== false);
+    const allMasterTasks = items.master || [];
+    const masterTasks = allMasterTasks.filter(item => {
+        if (!item.createdDate) return false;
+        const createdDate = item.createdDate.split('T')[0];
+        return createdDate === today;
+    });
+    const weeklyTasks = (items.weekly || []).filter(item => item.day === currentDay);
+    
+    const totalTasks = dailyTasks.length + masterTasks.length + weeklyTasks.length;
+    
+    if (totalTasks === 0) {
+        // Если нет задач, показываем пустое сердце
+        setHeartProgress(0);
+        return;
+    }
+    
+    // Подсчитываем выполненные задачи
+    let completedCount = 0;
+    
+    // Ежедневные ритуалы
+    dailyTasks.forEach(item => {
+        if (item.completedDates && Array.isArray(item.completedDates)) {
+            if (item.completedDates.includes(today)) completedCount++;
+        } else if (item.completedDate) {
+            const completedDate = item.completedDate.includes('T') 
+                ? item.completedDate.split('T')[0] 
+                : item.completedDate;
+            if (completedDate === today) completedCount++;
+        } else if (item.completed === true) {
+            completedCount++;
+        }
+    });
+    
+    // Задачи от господина
+    masterTasks.forEach(item => {
+        if (item.completed) {
+            if (item.completedDate) {
+                const completedDate = item.completedDate.split('T')[0];
+                if (completedDate === today) completedCount++;
+            } else {
+                completedCount++;
+            }
+        }
+    });
+    
+    // Еженедельные ритуалы
+    weeklyTasks.forEach(item => {
+        if (item.completedDates && Array.isArray(item.completedDates)) {
+            if (item.completedDates.includes(today)) completedCount++;
+        } else if (item.completed === true) {
+            completedCount++;
+        }
+    });
+    
+    // Вычисляем процент
+    const percent = totalTasks > 0 ? Math.round((completedCount / totalTasks) * 100) : 0;
+    
+    // Обновляем визуализацию
+    setHeartProgress(percent);
+}
+
+// Установка прогресса сердца с анимацией
+function setHeartProgress(percent) {
+    const fillRect = document.getElementById('heart-fill-rect');
+    const heartSvg = document.getElementById('progress-heart');
+    const heartFilled = document.getElementById('heart-filled');
+    const heartShine = document.getElementById('heart-shine');
+    
+    if (!fillRect || !heartSvg) return;
+    
+    // Вычисляем высоту заполнения (от 0 до 24, снизу вверх)
+    const fillHeight = (percent / 100) * 24;
+    const fillY = 24 - fillHeight;
+    
+    // Плавная анимация заполнения через CSS transition
+    fillRect.setAttribute('y', fillY.toString());
+    fillRect.setAttribute('height', fillHeight.toString());
+    
+    // Добавляем эффект свечения при заполнении
+    if (percent > 0) {
+        heartSvg.classList.add('heart-active');
+        if (heartFilled) {
+            heartFilled.style.opacity = '1';
+        }
+        if (heartShine) {
+            heartShine.style.opacity = Math.min(0.4, percent / 100 * 0.4);
+        }
+    } else {
+        heartSvg.classList.remove('heart-active');
+        if (heartFilled) {
+            heartFilled.style.opacity = '0';
+        }
+        if (heartShine) {
+            heartShine.style.opacity = '0';
+        }
+    }
+    
+    // Красивая анимация пульсации при изменении
+    if (percent > 0 && percent < 100) {
+        heartSvg.style.animation = 'heartPulseSmooth 0.8s cubic-bezier(0.4, 0, 0.2, 1)';
+        setTimeout(() => {
+            heartSvg.style.animation = '';
+        }, 800);
+    } else if (percent === 100) {
+        // Специальная анимация при 100% с эффектом свечения
+        heartSvg.style.animation = 'heartCompleteSmooth 1.2s cubic-bezier(0.4, 0, 0.2, 1)';
+        if (heartFilled) {
+            heartFilled.style.animation = 'heartGlow 1.5s ease-in-out infinite';
+        }
+        setTimeout(() => {
+            heartSvg.style.animation = '';
+        }, 1200);
+    }
+}
+
+// Показ поздравления с анимацией салюта
+function showCongratulations() {
+    console.log('[Congratulations] showCongratulations() вызвана');
+    
+    // Проверяем, не показывали ли уже сегодня поздравление
+    const lastCongratsDate = localStorage.getItem('lastCongratulationsDate');
+    const today = getLocalDateString();
+    
+    console.log('[Congratulations] Проверка даты:', {
+        lastCongratsDate,
+        today,
+        alreadyShown: lastCongratsDate === today
+    });
+    
+    if (lastCongratsDate === today) {
+        console.log('[Congratulations] ⚠️ Поздравление уже показывалось сегодня, пропускаем');
+        return; // Уже показывали сегодня
+    }
+    
+    // Сохраняем дату показа
+    localStorage.setItem('lastCongratulationsDate', today);
+    console.log('[Congratulations] Сохранили дату показа:', today);
+    
+    // Запускаем анимацию салюта
+    console.log('[Congratulations] Запускаем анимацию салюта...');
+    launchConfetti();
+    
+    // Показываем overlay с поздравлением
+    console.log('[Congratulations] Показываем overlay...');
+    showCongratulationsOverlay();
+}
+
+// Запуск анимации салюта
+function launchConfetti() {
+    if (typeof confetti === 'undefined') {
+        console.warn('[Confetti] Библиотека confetti не загружена');
+        return;
+    }
+    
+    // Настройки для красивого салюта
+    const duration = 3000;
+    const end = Date.now() + duration;
+    
+    const colors = ['#FFD700', '#FF6B6B', '#4ECDC4', '#45B7D1', '#FFA07A', '#98D8C8'];
+    
+    (function frame() {
+        confetti({
+            particleCount: 3,
+            angle: 60,
+            spread: 55,
+            origin: { x: 0 },
+            colors: colors
+        });
+        
+        confetti({
+            particleCount: 3,
+            angle: 120,
+            spread: 55,
+            origin: { x: 1 },
+            colors: colors
+        });
+        
+        if (Date.now() < end) {
+            requestAnimationFrame(frame);
+        }
+    }());
+    
+    // Дополнительный взрыв в центре
+    setTimeout(() => {
+        confetti({
+            particleCount: 100,
+            spread: 70,
+            origin: { y: 0.6 },
+            colors: colors
+        });
+    }, 500);
+}
+
+// Показ overlay с поздравлением
+function showCongratulationsOverlay() {
+    console.log('[Congratulations] showCongratulationsOverlay() вызвана');
+    
+    const messages = [
+        "Идеальное исполнение. Прими мои поздравления, хорошая девочка. Я горжусь тобой!",
+        "План выполнен. Я ценю твою дисциплину — сегодня ты служила образцово.",
+        "Систематичность и результат. Этот день послужил на благо нашей динамики, моя преданная.",
+        "Идеальное исполнение. Прими мои поздравления, хорошая девочка. Я горжусь тобой.",
+        "Цель достигнута. Твой Господин будет доволен."
+    ];
+    
+    // Выбираем случайное сообщение
+    const randomMessage = messages[Math.floor(Math.random() * messages.length)];
+    console.log('[Congratulations] Выбрано сообщение:', randomMessage);
+    
+    // Создаем overlay, если его еще нет
+    let overlay = document.getElementById('congratulations-overlay');
+    if (!overlay) {
+        console.log('[Congratulations] Создаем новый overlay...');
+        overlay = document.createElement('div');
+        overlay.id = 'congratulations-overlay';
+        overlay.className = 'fixed inset-0 z-[2000] flex items-center justify-center';
+        overlay.style.cssText = 'background-color: rgba(0, 0, 0, 0.7); backdrop-filter: blur(4px);';
+        overlay.innerHTML = `
+            <div class="congratulations-content max-w-md w-[90%] p-8 rounded-2xl text-center relative" style="background-color: var(--md-surface); border: 2px solid var(--md-primary); box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3);">
+                <button class="absolute right-4 top-4 text-2xl font-normal cursor-pointer transition-colors" onclick="closeCongratulations()" style="color: var(--md-on-surface-variant);" onmouseover="this.style.color='var(--md-on-surface)';" onmouseout="this.style.color='var(--md-on-surface-variant)';">&times;</button>
+                <div class="text-6xl mb-4">🎉</div>
+                <h2 class="text-2xl font-normal mb-4" style="color: var(--md-primary); font-family: 'Gabriela', serif;">Поздравляю!</h2>
+                <p class="text-lg mb-6" style="color: var(--md-on-surface);" id="congratulations-message"></p>
+                <button class="btn-primary px-8 py-3 rounded-lg" onclick="closeCongratulations()" style="background-color: var(--md-primary); color: var(--md-on-primary);">Понятно</button>
+            </div>
+        `;
+        document.body.appendChild(overlay);
+        console.log('[Congratulations] Overlay добавлен в DOM');
+    } else {
+        console.log('[Congratulations] Overlay уже существует, используем существующий');
+    }
+    
+    // Устанавливаем сообщение
+    const messageEl = overlay.querySelector('#congratulations-message');
+    if (messageEl) {
+        messageEl.textContent = randomMessage;
+        console.log('[Congratulations] Сообщение установлено в элемент');
+    } else {
+        console.error('[Congratulations] ❌ Элемент #congratulations-message не найден!');
+    }
+    
+    // Показываем overlay с анимацией
+    console.log('[Congratulations] Показываем overlay...');
+    overlay.style.display = 'flex';
+    overlay.style.opacity = '0';
+    setTimeout(() => {
+        overlay.style.transition = 'opacity 0.3s ease-in-out';
+        overlay.style.opacity = '1';
+        console.log('[Congratulations] Overlay должен быть виден теперь');
+    }, 10);
+}
+
+// Закрытие поздравления
+function closeCongratulations() {
+    const overlay = document.getElementById('congratulations-overlay');
+    if (overlay) {
+        overlay.style.transition = 'opacity 0.3s ease-in-out';
+        overlay.style.opacity = '0';
+        setTimeout(() => {
+            overlay.style.display = 'none';
+        }, 300);
+    }
 }
 
 // Отрисовка всех списков
@@ -1222,23 +1635,60 @@ function initFullCalendar() {
         initialView: 'dayGridDay',
         locale: 'ru',
         firstDay: 1,
+        
+        // Обработчик изменения даты/view
+        datesSet: function(dateInfo) {
+            // Обновляем шкалу прогресса при изменении даты или view
+            updateProgressHeart();
+        },
         height: 'auto',
         contentHeight: 'auto',
         headerToolbar: {
-            left: 'prev,next today',
-            center: 'title',
-            right: 'dayGridDay,dayGridWeek'
+            left: 'dayGridDay,dayGridWeek',
+            center: '',
+            right: 'prev,today,next'
         },
         buttonText: {
             today: 'Сегодня'
         },
         views: {
             dayGridDay: {
-                titleFormat: { year: 'numeric', month: 'long', day: 'numeric' },
+                titleFormat: function(arg) {
+                    // Формат для режима дня: "25 декабря четверг"
+                    const months = ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 
+                                   'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'];
+                    const days = ['воскресенье', 'понедельник', 'вторник', 'среда', 'четверг', 'пятница', 'суббота'];
+                    
+                    // FullCalendar передает объект с полями start и end
+                    let date;
+                    if (arg && arg.start) {
+                        date = arg.start;
+                    } else if (arg && arg.end) {
+                        date = arg.end;
+                    } else if (arg instanceof Date) {
+                        date = arg;
+                    } else {
+                        // Если ничего не подошло, используем текущую дату
+                        date = new Date();
+                    }
+                    
+                    // Убеждаемся, что date - это объект Date
+                    if (!(date instanceof Date)) {
+                        date = new Date(date);
+                    }
+                    
+                    const day = date.getDate();
+                    const month = months[date.getMonth()];
+                    const dayOfWeek = days[date.getDay()];
+                    
+                    const result = `${day} ${month} ${dayOfWeek}`;
+                    console.log('[Calendar] titleFormat:', { arg, date, result });
+                    return result;
+                },
                 buttonText: 'День'
             },
             dayGridWeek: {
-                titleFormat: { year: 'numeric', month: 'long', day: 'numeric' },
+                titleFormat: { year: 'numeric', month: 'long' },
                 buttonText: 'Неделя'
             }
         },
@@ -1332,7 +1782,82 @@ function initFullCalendar() {
     });
 
     calendar.render();
+    
+    // Применяем стили для кнопок навигации после рендера
+    setTimeout(() => {
+        applyNavigationButtonStyles();
+    }, 100);
     updateCalendarEvents();
+}
+
+// Применение стилей для кнопок навигации
+function applyNavigationButtonStyles() {
+    // Ищем кнопки разными способами (FullCalendar может использовать разные классы)
+    const prevButtons = document.querySelectorAll('.fc-button-prev, .fc-prev-button, button[aria-label*="prev"], button[aria-label*="Предыдущий"]');
+    const nextButtons = document.querySelectorAll('.fc-button-next, .fc-next-button, button[aria-label*="next"], button[aria-label*="Следующий"]');
+    const todayButtons = document.querySelectorAll('.fc-today-button, button[aria-label*="today"], button[aria-label*="Сегодня"]');
+    
+    // Также ищем через структуру toolbar
+    const toolbarChunk = document.querySelector('.fc-toolbar-chunk:last-child');
+    if (toolbarChunk) {
+        const allButtons = toolbarChunk.querySelectorAll('button');
+        allButtons.forEach((button, index) => {
+            const buttonText = button.textContent || button.innerText || '';
+            const ariaLabel = button.getAttribute('aria-label') || '';
+            const classList = Array.from(button.classList);
+            
+            // Определяем тип кнопки по содержимому или классам
+            if (buttonText.includes('Сегодня') || ariaLabel.includes('today') || ariaLabel.includes('Сегодня') || classList.some(c => c.includes('today'))) {
+                // Кнопка "Сегодня"
+                applyButtonStyles(button, 'today');
+            } else if (buttonText.includes('<') || ariaLabel.includes('prev') || ariaLabel.includes('Предыдущий') || classList.some(c => c.includes('prev'))) {
+                // Кнопка "<"
+                applyButtonStyles(button, 'prev');
+            } else if (buttonText.includes('>') || ariaLabel.includes('next') || ariaLabel.includes('Следующий') || classList.some(c => c.includes('next'))) {
+                // Кнопка ">"
+                applyButtonStyles(button, 'next');
+            }
+        });
+    }
+    
+    // Применяем стили ко всем найденным кнопкам через селекторы
+    prevButtons.forEach(button => applyButtonStyles(button, 'prev'));
+    nextButtons.forEach(button => applyButtonStyles(button, 'next'));
+    todayButtons.forEach(button => applyButtonStyles(button, 'today'));
+    
+    console.log('[Calendar] Стили применены к кнопкам:', {
+        prev: prevButtons.length,
+        next: nextButtons.length,
+        today: todayButtons.length,
+        toolbarButtons: toolbarChunk ? toolbarChunk.querySelectorAll('button').length : 0
+    });
+}
+
+// Вспомогательная функция для применения стилей к кнопке
+function applyButtonStyles(button, type) {
+    if (!button) return;
+    
+    // Закругление на всех 4 углах
+    button.style.setProperty('border-radius', '8px', 'important');
+    button.style.setProperty('border-top-left-radius', '8px', 'important');
+    button.style.setProperty('border-top-right-radius', '8px', 'important');
+    button.style.setProperty('border-bottom-left-radius', '8px', 'important');
+    button.style.setProperty('border-bottom-right-radius', '8px', 'important');
+    
+    // Отступы в зависимости от типа кнопки
+    if (type === 'prev') {
+        button.style.setProperty('margin-right', '1px', 'important');
+        button.style.setProperty('margin-left', '0', 'important');
+    } else if (type === 'next') {
+        button.style.setProperty('margin-left', '1px', 'important');
+        button.style.setProperty('margin-right', '0', 'important');
+    } else if (type === 'today') {
+        button.style.setProperty('margin-left', '1px', 'important');
+        button.style.setProperty('margin-right', '1px', 'important');
+    }
+    
+    button.style.setProperty('margin-top', '0', 'important');
+    button.style.setProperty('margin-bottom', '0', 'important');
 }
 
 // Обработка клика на событие в календаре
@@ -1380,6 +1905,12 @@ function handleCalendarEventClick(info) {
                 
                 saveData();
                 renderAll();
+                
+                // Обновляем шкалу прогресса
+                updateProgressHeart();
+                
+                // Проверяем, все ли задачи за день выполнены
+                checkAllTasksCompleted();
             } else {
                 console.warn('Не найден ежедневный ритуал с ID:', itemId);
             }
@@ -1396,6 +1927,12 @@ function handleCalendarEventClick(info) {
                     item.completed = true;
                     saveData();
                     renderAll();
+                    
+                    // Обновляем шкалу прогресса
+                    updateProgressHeart();
+                    
+                    // Проверяем, все ли задачи за день выполнены
+                    checkAllTasksCompleted();
                 }
             }
         }
@@ -1428,6 +1965,12 @@ function handleCalendarEventClick(info) {
                 
                 saveData();
                 renderAll();
+                
+                // Обновляем шкалу прогресса
+                updateProgressHeart();
+                
+                // Проверяем, все ли задачи за день выполнены
+                checkAllTasksCompleted();
             } else {
                 console.warn('Не найден еженедельный ритуал с ID:', itemId);
             }
@@ -1793,16 +2336,16 @@ function getRandomReminderMessage(ritualName) {
     return messages[randomIndex];
 }
 
-// Функция для генерации случайного ежедневного сообщения в 11:40 (совпадает с functions/index.js)
+// Функция для генерации случайного ежедневного сообщения в 18:00 (совпадает с functions/index.js)
 function getDaily11AMMessage() {
     const messages = [
-        "11:40 — время перерыва и моей гордости за тебя. Ты сегодня справляешься великолепно!",
-        "Середина дня, середина моих мыслей о тебе. Помни, как ты важна для меня",
-        "11 часов, и я хочу напомнить: твоя улыбка — самый ценный бриллиант в моей коллекции",
-        "Послеобеденное солнце светит не так ярко, как ты. Продолжай сиять",
-        "Кофе остывает, а моя нежность к тебе — никогда. Ты моё самое теплое солнышко",
-        "Время для лёгкого перерыва и моего напоминания: ты заслуживаешь всего самого лучшего",
-        "Середина рабочего дня — середина моей заботы о тебе. Расслабь плечи, я рядом"
+        "18:00 — время перерыва и моей гордости за тебя. Ты сегодня справляешься великолепно!",
+        "Вечер наступает, и я хочу напомнить: ты важна для меня",
+        "18 часов, и я хочу напомнить: твоя улыбка — самый ценный бриллиант в моей коллекции",
+        "Вечернее солнце светит не так ярко, как ты. Продолжай сиять",
+        "День подходит к концу, а моя нежность к тебе — никогда. Ты моё самое теплое солнышко",
+        "Время для вечернего перерыва и моего напоминания: ты заслуживаешь всего самого лучшего",
+        "Конец рабочего дня — время моей заботы о тебе. Расслабь плечи, я рядом"
     ];
     
     // Выбираем случайное сообщение
@@ -1888,16 +2431,16 @@ function checkLocalReminders() {
     const currentTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
     const currentDay = getCurrentDayName();
     
-    // Ежедневное уведомление в 11:40 (только для PWA в fallback режиме)
-    if (currentTime === '11:40') {
-        // Проверяем, не отправляли ли уже сегодня уведомление в 11:40
+    // Ежедневное уведомление в 18:00 (только для PWA в fallback режиме)
+    if (currentTime === '18:00') {
+        // Проверяем, не отправляли ли уже сегодня уведомление в 18:00
         const last11AMNotification = localStorage.getItem('last11AMNotification');
         const today = new Date().toDateString();
         
         if (!last11AMNotification || last11AMNotification !== today) {
             const message = getDaily11AMMessage();
             showNotification(message, '💝 Твоё напоминание');
-            console.log('[Reminders] 💝 Ежедневное уведомление 11:40 (fallback)');
+            console.log('[Reminders] 💝 Ежедневное уведомление 18:00 (fallback)');
             localStorage.setItem('last11AMNotification', today);
         }
     }
@@ -1971,6 +2514,12 @@ function getWeekNumber(date) {
 function getCurrentDayName() {
     const days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
     return days[new Date().getDay()];
+}
+
+// Получение названия дня недели из даты
+function getDayNameFromDate(date) {
+    const days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+    return days[date.getDay()];
 }
 
 // Получение названия дня

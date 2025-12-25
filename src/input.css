@@ -483,6 +483,7 @@
     font-weight: 500;
     margin: 0.25rem !important;
     padding: 0.5rem 1rem !important;
+    border-radius: 8px !important;
   }
   
   /* События календаря */
@@ -640,9 +641,54 @@
     background-color: var(--md-primary-container) !important;
     border-color: var(--md-primary-container) !important;
     color: var(--md-primary) !important;
-    border-radius: 12px !important;
-    margin: 0.25rem !important;
     padding: 0.5rem 0.75rem !important;
+  }
+  
+  /* Закругление на всех 4 углах для кнопок навигации */
+  .fc .fc-toolbar-chunk:last-child .fc-button-prev,
+  .fc .fc-button-prev.fc-button,
+  button.fc-button.fc-button-prev,
+  .fc .fc-button-prev {
+    border-radius: 8px !important;
+    border-top-left-radius: 8px !important;
+    border-top-right-radius: 8px !important;
+    border-bottom-left-radius: 8px !important;
+    border-bottom-right-radius: 8px !important;
+    margin-right: 4px !important;
+    margin-left: 0 !important;
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
+  }
+  
+  .fc .fc-toolbar-chunk:last-child .fc-button-next,
+  .fc .fc-button-next.fc-button,
+  button.fc-button.fc-button-next,
+  .fc .fc-button-next {
+    border-radius: 8px !important;
+    border-top-left-radius: 8px !important;
+    border-top-right-radius: 8px !important;
+    border-bottom-left-radius: 8px !important;
+    border-bottom-right-radius: 8px !important;
+    margin-left: 4px !important;
+    margin-right: 0 !important;
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
+  }
+  
+  /* Кнопка "Сегодня" - закругление на всех 4 углах */
+  .fc .fc-toolbar-chunk:last-child .fc-today-button,
+  .fc .fc-today-button.fc-button,
+  button.fc-button.fc-today-button,
+  .fc .fc-today-button {
+    border-radius: 8px !important;
+    border-top-left-radius: 8px !important;
+    border-top-right-radius: 8px !important;
+    border-bottom-left-radius: 8px !important;
+    border-bottom-right-radius: 8px !important;
+    margin-left: 4px !important;
+    margin-right: 0 !important;
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
   }
   
   .fc .fc-button-prev:hover,
@@ -692,5 +738,122 @@
     background-color: #705575 !important;
     border-color: #705575 !important;
   }
+}
+
+/* Overlay поздравления */
+#congratulations-overlay {
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+.congratulations-content {
+  animation: slideUp 0.4s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(30px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* Анимации для сердца прогресса */
+@keyframes heartPulseSmooth {
+  0% {
+    transform: scale(1);
+  }
+  30% {
+    transform: scale(1.12);
+  }
+  60% {
+    transform: scale(1.05);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes heartCompleteSmooth {
+  0% {
+    transform: scale(1);
+    filter: drop-shadow(0 2px 4px rgba(255, 105, 180, 0.3));
+  }
+  25% {
+    transform: scale(1.15);
+    filter: drop-shadow(0 4px 12px rgba(255, 105, 180, 0.6));
+  }
+  50% {
+    transform: scale(1.08);
+    filter: drop-shadow(0 3px 8px rgba(255, 105, 180, 0.5));
+  }
+  75% {
+    transform: scale(1.12);
+    filter: drop-shadow(0 4px 10px rgba(255, 105, 180, 0.6));
+  }
+  100% {
+    transform: scale(1);
+    filter: drop-shadow(0 2px 6px rgba(255, 105, 180, 0.4));
+  }
+}
+
+@keyframes heartGlow {
+  0%, 100% {
+    opacity: 1;
+    filter: brightness(1);
+  }
+  50% {
+    opacity: 0.95;
+    filter: brightness(1.2);
+  }
+}
+
+/* Стили для контейнера сердца */
+#progress-heart-container {
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+}
+
+#progress-heart {
+  filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.15));
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  transform-origin: center;
+}
+
+#progress-heart.heart-active {
+  filter: drop-shadow(0 2px 8px rgba(255, 105, 180, 0.3));
+}
+
+.heart-fill {
+  transition: opacity 0.6s ease-in-out;
+}
+
+.heart-shine {
+  transition: opacity 0.8s ease-in-out;
+}
+
+.heart-outline {
+  transition: stroke-opacity 0.3s ease;
+}
+
+#progress-heart:hover {
+  transform: scale(1.05);
+  filter: drop-shadow(0 4px 12px rgba(255, 105, 180, 0.4));
+}
+
+#progress-percent {
+  font-weight: 600;
+  letter-spacing: 0.5px;
 }
 

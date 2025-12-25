@@ -52,7 +52,7 @@
             pointer-events: none;
         }
         
-        /* Кнопка "Сегодня" - tertiary цвет, белый шрифт, больше закругление */
+        /* Кнопка "Сегодня" - tertiary цвет, белый шрифт, прямоугольная с округленными краями */
         .fc .fc-today-button,
         .fc-button-primary.fc-today-button,
         button.fc-today-button {
@@ -61,8 +61,66 @@
             background-color: #705575 !important;
             border-color: #705575 !important;
             color: #FFFFFF !important;
-            border-radius: 20px !important;
+            border-radius: 8px !important;
             padding: 0.5rem 1rem !important;
+            margin-left: 0.5rem !important;
+            margin-right: 0.5rem !important;
+        }
+        
+        /* Кнопки навигации - закругление на всех 4 углах с максимальной специфичностью */
+        .fc .fc-toolbar-chunk:last-child .fc-button-prev,
+        .fc .fc-button-prev.fc-button,
+        button.fc-button.fc-button-prev {
+            border-radius: 8px !important;
+            border-top-left-radius: 8px !important;
+            border-top-right-radius: 8px !important;
+            border-bottom-left-radius: 8px !important;
+            border-bottom-right-radius: 8px !important;
+            margin-right: 4px !important;
+            margin-left: 0 !important;
+            margin-top: 0 !important;
+            margin-bottom: 0 !important;
+        }
+        
+        .fc .fc-toolbar-chunk:last-child .fc-button-next,
+        .fc .fc-button-next.fc-button,
+        button.fc-button.fc-button-next {
+            border-radius: 8px !important;
+            border-top-left-radius: 8px !important;
+            border-top-right-radius: 8px !important;
+            border-bottom-left-radius: 8px !important;
+            border-bottom-right-radius: 8px !important;
+            margin-left: 4px !important;
+            margin-right: 0 !important;
+            margin-top: 0 !important;
+            margin-bottom: 0 !important;
+        }
+        
+        .fc .fc-toolbar-chunk:last-child .fc-today-button,
+        .fc .fc-today-button.fc-button,
+        button.fc-button.fc-today-button {
+            border-radius: 8px !important;
+            border-top-left-radius: 8px !important;
+            border-top-right-radius: 8px !important;
+            border-bottom-left-radius: 8px !important;
+            border-bottom-right-radius: 8px !important;
+            margin-left: 4px !important;
+            margin-right: 0 !important;
+            margin-top: 0 !important;
+            margin-bottom: 0 !important;
+        }
+        
+        /* Группа кнопок навигации - выравнивание по правому краю */
+        .fc .fc-toolbar-chunk:last-child {
+            display: flex !important;
+            justify-content: flex-end !important;
+            align-items: center !important;
+            gap: 0 !important;
+        }
+        
+        .fc .fc-toolbar-chunk:last-child .fc-button-group {
+            display: flex !important;
+            gap: 0 !important;
         }
         
         .fc .fc-today-button:hover,
@@ -135,19 +193,62 @@
 </head>
 <body class="min-h-screen p-5 text-md-on-surface">
     <div class="max-w-6xl mx-auto rounded-3xl shadow-md-xl overflow-hidden" style="background-color: var(--md-surface); border: 1px solid var(--md-outline-variant);">
-        <header class="px-8 py-10 text-center relative" style="background-color: var(--md-primary); color: var(--md-on-primary); border-bottom: 1px solid var(--md-outline-variant);">
+        <header class="relative flex items-center w-full" style="background-color: var(--md-primary); color: var(--md-on-primary); border-bottom: 1px solid var(--md-outline-variant); padding-top: calc(1.875rem - 20px); padding-bottom: calc(1.875rem - 20px); padding-left: 2rem; padding-right: 1rem; min-height: 40px;">
             <button class="md:hidden absolute left-4 top-1/2 -translate-y-1/2 text-2xl text-md-on-primary z-10" id="mobile-menu-btn" onclick="toggleMobileMenu()">☰</button>
-            <button class="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full flex items-center justify-center cursor-pointer transition-all hover:bg-white/20 active:scale-95 text-md-on-primary z-10" id="theme-toggle" onclick="toggleTheme()" title="Переключить тему">
+            <div style="flex: 1;"></div>
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <!-- Шкала прогресса в виде сердца -->
+                <div id="progress-heart-container" class="relative flex items-center justify-center flex-shrink-0">
+                <svg id="progress-heart" width="27" height="27" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <defs>
+                        <linearGradient id="heart-gradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                            <stop offset="0%" style="stop-color:#fad8fd;stop-opacity:1" />
+                            <stop offset="50%" style="stop-color:#fad8fd;stop-opacity:1" />
+                            <stop offset="100%" style="stop-color:#fad8fd;stop-opacity:1" />
+                        </linearGradient>
+                        <filter id="glow">
+                            <feGaussianBlur stdDeviation="2" result="coloredBlur"/>
+                            <feMerge>
+                                <feMergeNode in="coloredBlur"/>
+                                <feMergeNode in="SourceGraphic"/>
+                            </feMerge>
+                        </filter>
+                        <clipPath id="heart-clip">
+                            <rect id="heart-fill-rect" x="0" y="24" width="24" height="0" style="transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);" />
+                        </clipPath>
+                    </defs>
+                    <!-- Пустое сердце (контур) -->
+                    <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" 
+                          stroke="rgba(255, 255, 255, 0.4)" 
+                          stroke-width="1.5" 
+                          fill="none" 
+                          stroke-linecap="round" 
+                          stroke-linejoin="round"
+                          class="heart-outline"/>
+                    <!-- Заполненное сердце (розовое с градиентом) -->
+                    <path id="heart-filled" 
+                          d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" 
+                          fill="url(#heart-gradient)" 
+                          clip-path="url(#heart-clip)"
+                          filter="url(#glow)"
+                          class="heart-fill"/>
+                    <!-- Эффект блеска -->
+                    <path id="heart-shine" 
+                          d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" 
+                          fill="url(#heart-gradient)" 
+                          clip-path="url(#heart-clip)"
+                          opacity="0.3"
+                          class="heart-shine"/>
+                </svg>
+                </div>
+                <button class="w-10 h-10 rounded-full flex items-center justify-center cursor-pointer transition-all hover:bg-white/20 active:scale-95 text-md-on-primary z-10 flex-shrink-0" id="theme-toggle" onclick="toggleTheme()" title="Переключить тему">
                 <svg id="theme-icon-moon" class="w-6 h-6 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path>
                 </svg>
                 <svg id="theme-icon-sun" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path>
                 </svg>
-            </button>
-            <div class="px-12 md:px-16">
-                <h1 class="text-3xl font-normal mb-2 text-md-on-primary" style="font-family: 'Gabriela', serif;">Совиная напоминалка</h1>
-                <p class="subtitle text-base opacity-70 text-md-on-primary">Не забудь о важном</p>
+                </button>
             </div>
         </header>
 
@@ -166,7 +267,7 @@
 
             <div class="flex-1 min-w-0">
                 <!-- Календарь FullCalendar -->
-                <section class="px-6 py-6 rounded-md-lg mb-6 border border-md-outline-variant" style="background-color: var(--md-surface);">
+                <section class="px-6 py-6 rounded-md-lg mb-6 mt-4 border border-md-outline-variant" style="background-color: var(--md-surface);">
                     <div id="fullcalendar" style="padding: 0.5rem;"></div>
                 </section>
 
@@ -268,6 +369,8 @@
     <script src="firebase-config.js"></script>
     <!-- Важно: для JS используем index.global.min.js, а не main.min.js -->
     <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js"></script>
+    <!-- Canvas Confetti для анимации салюта -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.min.js"></script>
     <script src="script.js"></script>
     
     <script>
